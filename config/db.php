@@ -7,7 +7,7 @@ if ($_SERVER['HTTP_HOST'] == 'localhost') {
     $host = "localhost";
     $user = "root";
     $password = "";
-    $dbname = "saas_db"; // Jo naam aapne Local database ka rakha hai
+    $dbname = "saas"; // Jo naam aapne Local database ka rakha hai
 } else {
     // InfinityFree settings (Online)
     // Yahan main ne aapka naya path 'SaaS' update kar diya hai

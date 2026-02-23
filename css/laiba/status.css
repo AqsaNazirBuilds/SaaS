@@ -20,15 +20,16 @@ body {
     min-height: 100vh;
 }
 
+/* status.css mein isay dhoondain */
 .status-card {
-    background: white;
-    width: 100%;
-    max-width: 650px;
-    border-radius: 12px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 90%;            /* Screen ka 95% hissa cover karega */
+    max-width: 1100px;     /* Pehle ye 800 ya 900 tha, ab 1200px kar dein */
+    margin: 40px auto;     /* Upar niche se gap aur center mein */
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
     overflow: hidden;
 }
-
 .card-header {
     background-color: var(--navy-blue);
     padding: 25px 40px;
@@ -62,8 +63,9 @@ body {
 }
 
 .info-box {
+    height: 65px;
     background: #f8fafc;
-    padding: 15px;
+    padding: 20px;
     border-radius: 10px;
     border: 1px solid #e2e8f0;
     text-align: center;
@@ -99,3 +101,62 @@ body {
     text-decoration: none;
     font-size: 13px;
 }
+
+
+/* Pehle wali CSS ke niche ye add kar dein */
+
+/* 📊 Professional Usage Graph Container */
+.usage-analytics-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.usage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.usage-header span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f3b57;
+}
+
+/* Progress Track (Sleek Look) */
+.progress-container {
+    background: #f1f5f9;
+    height: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+/* Gradient Fill for Bar */
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #1f3b57 0%, #3b82f6 100%);
+    transition: width 0.8s ease-in-out;
+}
+
+/* Orange Alert Box */
+.upgrade-alert {
+    background: #fff7ed;
+    border-left: 5px solid #f97316;
+    padding: 12px 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    color: #9a3412;
+    font-size: 13px;
+}
+
+.icon-orange { color: #f97316; font-size: 18px; }

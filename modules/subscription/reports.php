@@ -5,13 +5,17 @@ require_once(__DIR__ . '/plan_logic.php');
 $plan_logic = new PlanLogic($db);
 $usage = $plan_logic->get_user_usage(1); 
 
-// Naya data fetch karna jo hum ne plan_logic mein add kiya tha
+// Data fetch karna
 $monthly_data = $plan_logic->get_monthly_logins(1);
 $reg_data = $plan_logic->get_monthly_registrations(1);
 $sales_data = $plan_logic->get_premium_sales(1);
 $top_users = $plan_logic->get_top_users(1);
 
 $is_premium = ($usage['plan_id'] == 2);
+
+// Revenue Calculation: $10 per premium sale
+$total_sales_count = array_sum($sales_data['data']);
+$revenue = $total_sales_count * 10;
 ?>
 
 <!DOCTYPE html>
@@ -29,6 +33,7 @@ $is_premium = ($usage['plan_id'] == 2);
         .graph-card p { margin-bottom: 15px; color: #666; font-size: 0.85rem; }
         .top-users-list { margin-top: 20px; background: #fff; padding: 20px; border-radius: 12px; }
         .user-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .stat-box.revenue-box { border-left: 5px solid #22c55e; } /* Revenue ka alag color */
     </style>
 </head>
 <body>
@@ -63,6 +68,15 @@ $is_premium = ($usage['plan_id'] == 2);
             <div class="stat-box">
                 <span class="stat-label">SUBSCRIPTION STATUS</span>
                 <h2 class="stat-value" style="color: #22c55e;">Active</h2>
+            </div>
+            
+            <div class="stat-box revenue-box">
+                <span class="stat-label">TOTAL REVENUE</span>
+                <h2 class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></h2>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">NEW REGISTRATIONS</span>
+                <h2 class="stat-value"><?php echo array_sum($reg_data['data']); ?></h2>
             </div>
         </div>
 
@@ -100,20 +114,25 @@ $is_premium = ($usage['plan_id'] == 2);
 </div>
 
 <script>
-    // Utility to handle empty data for charts
-    function getChartData(data) {
-        return data.length > 0 ? data : [0, 0, 0, 0, 0];
+    // Database data ko months ke sath sahi map karne ke liye function
+    function mapData(labels, counts) {
+        const fullMonths = ['January', 'February', 'March', 'April', 'May'];
+        return fullMonths.map(m => {
+            const index = labels.indexOf(m);
+            return index !== -1 ? counts[index] : 0;
+        });
     }
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 
-    // 1. Registration Chart
+    const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
+
+    // 1. Registration Chart (Real Data)
     new Chart(document.getElementById('regChart'), {
         type: 'line',
         data: {
-            labels: months,
+            labels: monthsShort,
             datasets: [{
                 label: 'New Users',
-                data: getChartData(<?php echo json_encode($reg_data['data']); ?>),
+                data: mapData(<?php echo json_encode($reg_data['labels']); ?>, <?php echo json_encode($reg_data['data']); ?>),
                 borderColor: '#0ea5e9',
                 backgroundColor: 'rgba(14, 165, 233, 0.1)',
                 fill: true,
@@ -123,14 +142,14 @@ $is_premium = ($usage['plan_id'] == 2);
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 2. Sales Chart
+    // 2. Sales Chart (Real Data from start_date)
     new Chart(document.getElementById('salesChart'), {
         type: 'bar',
         data: {
-            labels: months,
+            labels: monthsShort,
             datasets: [{
                 label: 'Sales',
-                data: getChartData(<?php echo json_encode($sales_data['data']); ?>),
+                data: mapData(<?php echo json_encode($sales_data['labels']); ?>, <?php echo json_encode($sales_data['data']); ?>),
                 backgroundColor: '#22c55e',
                 borderRadius: 5
             }]
@@ -138,14 +157,14 @@ $is_premium = ($usage['plan_id'] == 2);
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 3. Login Chart (Purana)
+    // 3. Login Chart (Real Data from audit_logs)
     new Chart(document.getElementById('usageChart'), {
         type: 'bar',
         data: {
-            labels: months,
+            labels: monthsShort,
             datasets: [{
                 label: 'Logins',
-                data: getChartData(<?php echo json_encode($monthly_data['data']); ?>),
+                data: mapData(<?php echo json_encode($monthly_data['labels']); ?>, <?php echo json_encode($monthly_data['data']); ?>),
                 backgroundColor: '#1f3b57',
                 borderRadius: 5
             }]
@@ -153,6 +172,5 @@ $is_premium = ($usage['plan_id'] == 2);
         options: { responsive: true, maintainAspectRatio: false }
     });
 </script>
-
 </body>
 </html>

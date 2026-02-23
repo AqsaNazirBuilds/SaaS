@@ -58,8 +58,11 @@ $logs = $db->query($query);
                     <option value="Users" <?php if($module == 'Users') echo 'selected'; ?>>Users</option>
                     <option value="Auth" <?php if($module == 'Auth') echo 'selected'; ?>>Auth</option>
                 </select>
-
+                  
                 <button type="submit" class="btn-filter">Filter</button>
+                <a href="export_audit.php" class="btn-download" style="background: #22c55e; color: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-file-excel"></i> Export
+                </a>
             </form>
         </div>
 

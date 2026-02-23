@@ -80,12 +80,15 @@ $usage = $plan_logic->get_user_usage(1);
                 </ul>
             </div>
 
-            <div class="action-area" style="margin-top: 30px; text-align: center;">
-                <button class="btn-manage" style="width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                    <i class="fas fa-arrow-up"></i> Upgrade Subscription
-                </button>
+               <div class="action-area" style="margin-top: 30px; text-align: center;">
+                <a href="upgrade_process.php" class="btn-manage" style="display: block; width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; text-decoration: none; box-sizing: border-box; transition: 0.3s; cursor: pointer;">
+                    <i class="fas fa-arrow-up"></i> Upgrade to Premium Plan
+                </a>
+                
                 <div style="margin-top: 15px;">
-                    <a href="../../index.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">Back to Dashboard</a>
+                    <a href="../../index.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+                        <i class="fas fa-chevron-left"></i> Back to Dashboard
+                    </a>
                 </div>
             </div>
 

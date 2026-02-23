@@ -126,5 +126,60 @@ class PlanLogic {
             'percentage' => round($percentage, 0)
         ];
     }
+
+    // 🟢 NAYA FUNCTION: Subscription Billing & Expiry Details
+    public function get_subscription_details($tenant_id)
+    {
+        $sql = "SELECT s.id, p.plan_name, s.start_date, s.expiry_date, s.status 
+                FROM subscriptions s 
+                JOIN plans p ON s.plan_id = p.id 
+                WHERE s.tenant_id = ? 
+                ORDER BY s.expiry_date ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $tenant_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $subscriptions = [];
+        $today = new DateTime();
+
+        while ($row = $result->fetch_assoc()) {
+            $expiry = new DateTime($row['expiry_date']);
+            $interval = $today->diff($expiry);
+            
+            // Days remaining calculate karna
+            $days_left = (int)$interval->format("%r%a");
+            $row['days_remaining'] = $days_left;
+            
+            // Status color decide karna
+            if ($days_left < 0) {
+                $row['status_tag'] = 'Expired';
+                $row['color'] = '#ef4444'; // Red
+            } elseif ($days_left <= 7) {
+                $row['status_tag'] = 'Expiring Soon';
+                $row['color'] = '#f97316'; // Orange
+            } else {
+                $row['status_tag'] = 'Active';
+                $row['color'] = '#22c55e'; // Green
+            }
+            
+            $subscriptions[] = $row;
+        }
+        return $subscriptions;
+    }
+
+    // 🟢 NAYA FUNCTION: Recent Activity Logs fetch karne ke liye
+    public function get_recent_activity($tenant_id) {
+        $sql = "SELECT action, created_at 
+                FROM audit_logs 
+                WHERE tenant_id = ? 
+                ORDER BY created_at DESC LIMIT 5";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $tenant_id);
+        $stmt->execute();
+        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    }
 }
 ?>

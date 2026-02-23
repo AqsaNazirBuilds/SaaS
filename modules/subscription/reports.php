@@ -5,15 +5,14 @@ require_once(__DIR__ . '/plan_logic.php');
 $plan_logic = new PlanLogic($db);
 $usage = $plan_logic->get_user_usage(1); 
 
-// Data fetch karna
 $monthly_data = $plan_logic->get_monthly_logins(1);
 $reg_data = $plan_logic->get_monthly_registrations(1);
 $sales_data = $plan_logic->get_premium_sales(1);
 $top_users = $plan_logic->get_top_users(1);
-
+$billing_details = $plan_logic->get_subscription_details(1);
+$recent_activities = $plan_logic->get_recent_activity(1);
 $is_premium = ($usage['plan_id'] == 2);
 
-// Revenue Calculation: $10 per premium sale
 $total_sales_count = array_sum($sales_data['data']);
 $revenue = $total_sales_count * 10;
 ?>
@@ -23,154 +22,262 @@ $revenue = $total_sales_count * 10;
 <head>
     <meta charset="UTF-8">
     <title>Advanced Analytics | Reports</title>
-    <link rel="stylesheet" href="../../css/laiba/reports.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        .graph-section { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .graph-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .graph-card h3 { margin-bottom: 5px; color: #1f3b57; font-size: 1.1rem; }
-        .graph-card p { margin-bottom: 15px; color: #666; font-size: 0.85rem; }
-        .top-users-list { margin-top: 20px; background: #fff; padding: 20px; border-radius: 12px; }
-        .user-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .stat-box.revenue-box { border-left: 5px solid #22c55e; } /* Revenue ka alag color */
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1f3b57; }
+        .reports-container { max-width: 1100px; margin: auto; position: relative; }
+        
+        /* 3+2 Stats Grid Layout */
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); /* 6 columns for easy math */
+            gap: 20px; 
+            margin-bottom: 30px; 
+        }
+        .stat-box { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            border-top: 2px solid #1f3b57;
+            text-align: center;
+            grid-column: span 2; /* Each card takes 2 columns, so 3 cards in first row */
+        }
+        /* Special class for bottom 2 cards to center them */
+        .stat-box.bottom-card {
+            grid-column: span 3; /* Each takes 3 columns, so 2 cards fill the 6-column row */
+        }
+
+        .stat-label { color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; }
+        .stat-value { color: #1f3b57; font-size: 24px; font-weight: bold; margin-top: 10px; display: block; }
+
+        /* Report Card Styling */
+        .report-card { 
+            background: #ffffff !important; 
+            padding: 25px; 
+            border-radius: 15px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+        }
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+
+        /* Tables & Lists */
+        .custom-table { width: 100%; border-collapse: collapse; }
+        .custom-table th { text-align: left; padding: 15px; background: #1f3b57; color: white; font-size: 13px; }
+        .custom-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .user-row { 
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px; margin-bottom: 10px;
+            background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;
+        }
+        .badge-count { background: #1f3b57; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; }
+        .status-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; color: white; font-weight: 600; }
+        .badge-status { background: #ff8c42; color: white; padding: 4px 10px; border-radius: 50px; font-size: 11px; }
+
+        .charts-double { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .blurred { filter: blur(5px); pointer-events: none; }
+
+
+        .btn-download {
+    background: #ff8c42; /* Landing page wala orange */
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(255, 140, 66, 0.3);
+    transition: 0.3s ease;
+}
+
+.btn-download:hover {
+    background: #e67e32;
+    transform: translateY(-2px);
+}
     </style>
 </head>
 <body>
 
 <div class="reports-container">
-    <?php if (!$is_premium): ?>
-        <div class="locked-overlay">
-            <div class="lock-card">
-                <i class="fas fa-lock fa-4x"></i>
-                <h2>Premium Feature Locked</h2>
-                <p>Advanced Reports and Analytics are only available for Premium Plan users.</p>
-                <a href="status.php" class="btn-upgrade-now">Upgrade to Unlock</a>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <div class="report-content <?php echo !$is_premium ? 'blurred' : ''; ?>">
-        <div class="report-header">
-            <h1><i class="fas fa-chart-line"></i> Advanced Business Analytics</h1>
-            <p>Visual representation of your system usage</p>
+        
+        <div class="report-header" style="margin-bottom: 25px; text-align: center;">
+            <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
+            <p>Your system's real-time performance overview</p>
+
+            <button onclick="downloadPDF()" class="btn-download">
+        <i class="fas fa-file-pdf"></i> Download PDF Report
+    </button>
         </div>
 
         <div class="stats-grid">
             <div class="stat-box">
-                <span class="stat-label">TOTAL USERS</span>
-                <h2 class="stat-value"><?php echo $usage['current']; ?> / <?php echo $usage['limit']; ?></h2>
+                <span class="stat-label">Total Users</span>
+                <span class="stat-value"><?php echo $usage['current']; ?> / <?php echo $usage['limit']; ?></span>
             </div>
             <div class="stat-box">
-                <span class="stat-label">LOGIN COUNT</span>
-                <h2 class="stat-value"><?php echo $usage['logins_total']; ?></h2>
+                <span class="stat-label">Login Count</span>
+                <span class="stat-value"><?php echo $usage['logins_total']; ?></span>
             </div>
             <div class="stat-box">
-                <span class="stat-label">SUBSCRIPTION STATUS</span>
-                <h2 class="stat-value" style="color: #22c55e;">Active</h2>
+                <span class="stat-label">Status</span>
+                <span class="stat-value" style="color: #22c55e;">Active</span>
             </div>
-            
-            <div class="stat-box revenue-box">
-                <span class="stat-label">TOTAL REVENUE</span>
-                <h2 class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></h2>
+
+            <div class="stat-box bottom-card">
+                <span class="stat-label">Total Revenue</span>
+                <span class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></span>
             </div>
-            <div class="stat-box">
-                <span class="stat-label">NEW REGISTRATIONS</span>
-                <h2 class="stat-value"><?php echo array_sum($reg_data['data']); ?></h2>
+            <div class="stat-box bottom-card">
+                <span class="stat-label">New Registrations</span>
+                <span class="stat-value"><?php echo array_sum($reg_data['data']); ?></span>
             </div>
         </div>
 
-        <div class="graph-section">
-            <div class="graph-card">
-                <h3><i class="fas fa-user-plus"></i> User Registration</h3>
-                <p>New accounts created per month</p>
+        <div class="charts-double">
+            <div class="report-card">
+                <div class="card-title"><i class="fas fa-user-plus" style="color:#0ea5e9;"></i> User Registration</div>
                 <div style="height: 250px;"><canvas id="regChart"></canvas></div>
             </div>
-
-            <div class="graph-card">
-                <h3><i class="fas fa-shopping-cart"></i> Premium Sales</h3>
-                <p>Premium subscriptions sold</p>
+            <div class="report-card">
+                <div class="card-title"><i class="fas fa-shopping-cart" style="color:#22c55e;"></i> Premium Sales</div>
                 <div style="height: 250px;"><canvas id="salesChart"></canvas></div>
             </div>
         </div>
 
-        <div class="top-users-list">
-            <h3><i class="fas fa-crown"></i> Most Active Users</h3>
-            <p>Top 3 users with highest login activity</p>
+        <div class="report-card">
+            <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
+            <table class="custom-table">
+                <thead>
+                    <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach($billing_details as $bill): ?>
+                    <tr>
+                        <td><strong><?php echo $bill['plan_name']; ?></strong></td>
+                        <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
+                        <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
+                        <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
+                        <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="report-card">
+            <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
             <?php foreach($top_users as $user): ?>
                 <div class="user-row">
                     <span><strong><?php echo $user['username']; ?></strong></span>
-                    <span class="badge"><?php echo $user['activity_count']; ?> Logins</span>
+                    <span class="badge-count"><?php echo $user['activity_count']; ?> Logins</span>
                 </div>
             <?php endforeach; ?>
         </div>
 
-        <div class="graph-card" style="margin-top: 20px;">
-            <h3><i class="fas fa-history"></i> Monthly Login Activity</h3>
-            <p>Overall system engagement</p>
-            <div style="height: 250px;"><canvas id="usageChart"></canvas></div>
+        <div class="report-card">
+            <div class="card-title"><i class="fas fa-tasks" style="color: #ff8c42;"></i> Recent System Activity</div>
+            <table class="custom-table">
+                <thead><tr><th>Action</th><th>Time & Date</th><th>Result</th></tr></thead>
+                <tbody>
+                    <?php foreach($recent_activities as $activity): ?>
+                    <tr>
+                        <td><strong><?php echo $activity['action']; ?></strong></td>
+                        <td><?php echo date('d M, Y | h:i A', strtotime($activity['created_at'])); ?></td>
+                        <td><span class="badge-status">Logged</span></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
+
+        <div class="report-card">
+            <div class="card-title"><i class="fas fa-history" style="color:#1f3b57;"></i> Monthly Login Activity</div>
+            <div style="height: 300px;"><canvas id="usageChart"></canvas></div>
+        </div>
+
     </div>
 </div>
 
 <script>
-    // Database data ko months ke sath sahi map karne ke liye function
     function mapData(labels, counts) {
-        const fullMonths = ['January', 'February', 'March', 'April', 'May'];
-        return fullMonths.map(m => {
-            const index = labels.indexOf(m);
-            return index !== -1 ? counts[index] : 0;
+        const months = ['January', 'February', 'March', 'April', 'May'];
+        return months.map(m => {
+            const i = labels.indexOf(m);
+            return i !== -1 ? counts[i] : 0;
         });
     }
+    const ms = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
 
-    const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
-
-    // 1. Registration Chart (Real Data)
     new Chart(document.getElementById('regChart'), {
         type: 'line',
         data: {
-            labels: monthsShort,
+            labels: ms,
             datasets: [{
-                label: 'New Users',
+                label: 'Users',
                 data: mapData(<?php echo json_encode($reg_data['labels']); ?>, <?php echo json_encode($reg_data['data']); ?>),
-                borderColor: '#0ea5e9',
-                backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                fill: true,
-                tension: 0.4
+                borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4
             }]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 2. Sales Chart (Real Data from start_date)
     new Chart(document.getElementById('salesChart'), {
         type: 'bar',
         data: {
-            labels: monthsShort,
+            labels: ms,
             datasets: [{
                 label: 'Sales',
                 data: mapData(<?php echo json_encode($sales_data['labels']); ?>, <?php echo json_encode($sales_data['data']); ?>),
-                backgroundColor: '#22c55e',
-                borderRadius: 5
+                backgroundColor: '#22c55e', borderRadius: 5
             }]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 3. Login Chart (Real Data from audit_logs)
     new Chart(document.getElementById('usageChart'), {
         type: 'bar',
         data: {
-            labels: monthsShort,
+            labels: ms,
             datasets: [{
                 label: 'Logins',
                 data: mapData(<?php echo json_encode($monthly_data['labels']); ?>, <?php echo json_encode($monthly_data['data']); ?>),
-                backgroundColor: '#1f3b57',
-                borderRadius: 5
+                backgroundColor: '#1f3b57', borderRadius: 8
             }]
         },
         options: { responsive: true, maintainAspectRatio: false }
     });
+
+    function downloadPDF() {
+    // Wo hissa select karein jiska PDF banana hai
+    const element = document.querySelector('.report-content'); 
+    
+    // PDF ki settings
+    const opt = {
+        margin:       [10, 10],
+        filename:     'Business_Analytics_Report.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Button ko PDF mein na dikhane ke liye thori dair hide karna
+    const btn = document.querySelector('.btn-download');
+    btn.style.display = 'none';
+
+    // PDF generate karein
+    html2pdf().set(opt).from(element).save().then(() => {
+        btn.style.display = 'inline-flex'; // PDF banne ke baad button wapas dikha dein
+    });
+}
 </script>
 </body>
 </html>

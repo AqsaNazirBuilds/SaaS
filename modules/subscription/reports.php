@@ -3,12 +3,16 @@ require_once(__DIR__ . '/../../config/db.php');
 require_once(__DIR__ . '/plan_logic.php');
 
 $plan_logic = new PlanLogic($db);
-$usage = $plan_logic->get_user_usage(1); 
 
-$monthly_data = $plan_logic->get_monthly_logins(1);
-$reg_data = $plan_logic->get_monthly_registrations(1);
-$sales_data = $plan_logic->get_premium_sales(1);
-$top_users = $plan_logic->get_top_users(1);
+// 1. Sab se pehle filter ko pakreinh
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
+
+// 2. Ab saare functions ko ye filter bhej dein (Agar aapki plan_logic file allow karti hai)
+$usage = $plan_logic->get_user_usage(1); 
+$monthly_data = $plan_logic->get_monthly_logins(1, $filter);
+$reg_data = $plan_logic->get_monthly_registrations(1, $filter);
+$sales_data = $plan_logic->get_premium_sales(1, $filter);
+$top_users = $plan_logic->get_top_users(1, $filter);
 $billing_details = $plan_logic->get_subscription_details(1);
 $recent_activities = $plan_logic->get_recent_activity(1);
 $is_premium = ($usage['plan_id'] == 2);
@@ -16,7 +20,6 @@ $is_premium = ($usage['plan_id'] == 2);
 $total_sales_count = array_sum($sales_data['data']);
 $revenue = $total_sales_count * 10;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,6 +96,7 @@ $revenue = $total_sales_count * 10;
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    margin-left:600px;
     margin-bottom: 20px;
     box-shadow: 0 4px 10px rgba(255, 140, 66, 0.3);
     transition: 0.3s ease;
@@ -113,10 +117,24 @@ $revenue = $total_sales_count * 10;
             <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
             <p>Your system's real-time performance overview</p>
 
-            <button onclick="downloadPDF()" class="btn-download">
+            
+        </div>
+    
+
+      <div class="filter-section" style="margin-bottom: 20px;">
+    <label for="timeframe" style="font-weight: bold; margin-right: 10px;">View Stats For:</label>
+    <select id="timeframe" onchange="updateDashboard()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+        <option value="7days">Last 7 Days</option>
+        <option value="month" selected>This Month</option>
+        <option value="6months">Last 6 Months</option>
+        <option value="year">Full Year</option>
+    </select>
+
+     <button onclick="downloadPDF()" class="btn-download">
         <i class="fas fa-file-pdf"></i> Download PDF Report
     </button>
-        </div>
+</div>
+
 
         <div class="stats-grid">
             <div class="stat-box">
@@ -277,6 +295,15 @@ $revenue = $total_sales_count * 10;
     html2pdf().set(opt).from(element).save().then(() => {
         btn.style.display = 'inline-flex'; // PDF banne ke baad button wapas dikha dein
     });
+}
+
+function updateDashboard() {
+    const timeframe = document.getElementById('timeframe').value;
+    
+    // Yahan hum server ko batayenge ke humein naya data chahiye
+    // Abhi ke liye hum sirf page refresh kar rahe hain query parameter ke sath
+    // Taake PHP us timeframe ko pakar sakay
+    window.location.href = "reports.php?filter=" + timeframe;
 }
 </script>
 </body>

@@ -9,11 +9,27 @@ class PlanLogic {
         $this->db = $db_conn;
     }
 
-    // 1. Monthly Logins (audit_logs table) - FIXED
-    public function get_monthly_logins($tenant_id) {
+    // Helper function to get Date Condition based on filter
+    private function get_date_condition($filter, $column = 'created_at') {
+        switch ($filter) {
+            case '7days':
+                return " AND $column >= NOW() - INTERVAL 7 DAY ";
+            case '6months':
+                return " AND $column >= NOW() - INTERVAL 6 MONTH ";
+            case 'year':
+                return " AND $column >= NOW() - INTERVAL 1 YEAR ";
+            case 'month':
+            default:
+                return " AND MONTH($column) = MONTH(NOW()) AND YEAR($column) = YEAR(NOW()) ";
+        }
+    }
+
+    // 1. Monthly Logins (audit_logs table) - UPDATED with Filter
+    public function get_monthly_logins($tenant_id, $filter = 'month') {
+        $date_cond = $this->get_date_condition($filter, 'created_at');
         $sql = "SELECT MONTHNAME(created_at) as month, COUNT(*) as total 
                 FROM audit_logs 
-                WHERE tenant_id = ? AND action LIKE '%Login%' 
+                WHERE tenant_id = ? AND action LIKE '%Login%' $date_cond
                 GROUP BY MONTH(created_at) 
                 ORDER BY created_at ASC LIMIT 5";
         
@@ -30,11 +46,12 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 2. User Registration (users table) - FIXED: Using 'created_at'
-    public function get_monthly_registrations($tenant_id) {
+    // 2. User Registration (users table) - UPDATED with Filter
+    public function get_monthly_registrations($tenant_id, $filter = 'month') {
+        $date_cond = $this->get_date_condition($filter, 'created_at');
         $sql = "SELECT MONTHNAME(created_at) as month, COUNT(*) as total 
                 FROM users 
-                WHERE tenant_id = ? 
+                WHERE tenant_id = ? $date_cond
                 GROUP BY MONTH(created_at) 
                 ORDER BY created_at ASC LIMIT 5";
         
@@ -51,11 +68,12 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 3. Premium Sales (subscriptions table) - FIXED: Using 'start_date'
-    public function get_premium_sales($tenant_id) {
+    // 3. Premium Sales (subscriptions table) - UPDATED with Filter
+    public function get_premium_sales($tenant_id, $filter = 'month') {
+        $date_cond = $this->get_date_condition($filter, 'start_date');
         $sql = "SELECT MONTHNAME(start_date) as month, COUNT(*) as total 
                 FROM subscriptions 
-                WHERE tenant_id = ? AND plan_id = 2 
+                WHERE tenant_id = ? AND plan_id = 2 $date_cond
                 GROUP BY MONTH(start_date) 
                 ORDER BY start_date ASC LIMIT 5";
         
@@ -72,12 +90,13 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 4. Most Active Users - FIXED: Using 'u.name' instead of 'username'
-    public function get_top_users($tenant_id) {
+    // 4. Most Active Users - UPDATED with Filter
+    public function get_top_users($tenant_id, $filter = 'month') {
+        $date_cond = $this->get_date_condition($filter, 'a.created_at');
         $sql = "SELECT u.name as username, COUNT(a.id) as activity_count 
                 FROM users u 
                 JOIN audit_logs a ON u.id = a.user_id 
-                WHERE a.tenant_id = ? AND a.action LIKE '%Login%' 
+                WHERE a.tenant_id = ? AND a.action LIKE '%Login%' $date_cond
                 GROUP BY u.id 
                 ORDER BY activity_count DESC LIMIT 3";
         
@@ -127,7 +146,7 @@ class PlanLogic {
         ];
     }
 
-    // 🟢 NAYA FUNCTION: Subscription Billing & Expiry Details
+    // 🟢 Subscription Billing & Expiry Details
     public function get_subscription_details($tenant_id)
     {
         $sql = "SELECT s.id, p.plan_name, s.start_date, s.expiry_date, s.status 
@@ -148,20 +167,18 @@ class PlanLogic {
             $expiry = new DateTime($row['expiry_date']);
             $interval = $today->diff($expiry);
             
-            // Days remaining calculate karna
             $days_left = (int)$interval->format("%r%a");
             $row['days_remaining'] = $days_left;
             
-            // Status color decide karna
             if ($days_left < 0) {
                 $row['status_tag'] = 'Expired';
-                $row['color'] = '#ef4444'; // Red
+                $row['color'] = '#ef4444';
             } elseif ($days_left <= 7) {
                 $row['status_tag'] = 'Expiring Soon';
-                $row['color'] = '#f97316'; // Orange
+                $row['color'] = '#f97316';
             } else {
                 $row['status_tag'] = 'Active';
-                $row['color'] = '#22c55e'; // Green
+                $row['color'] = '#22c55e';
             }
             
             $subscriptions[] = $row;
@@ -169,7 +186,7 @@ class PlanLogic {
         return $subscriptions;
     }
 
-    // 🟢 NAYA FUNCTION: Recent Activity Logs fetch karne ke liye
+    // 🟢 Recent Activity Logs
     public function get_recent_activity($tenant_id) {
         $sql = "SELECT action, created_at 
                 FROM audit_logs 

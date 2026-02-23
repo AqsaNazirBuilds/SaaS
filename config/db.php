@@ -1,32 +1,39 @@
 <?php
-// 1. Check current host (Localhost or Online)
-if ($_SERVER['HTTP_HOST'] == 'localhost') {
-    // Localhost settings (XAMPP / VS Code)
-    // Aapke folder ka naam "SaaS_Project" hai
-    define('BASE_URL', 'http://localhost/SaaS_Project/');
-    $host = "localhost";
-    $user = "root";
-    $password = "";
-    $dbname = "saas"; // Jo naam aapne Local database ka rakha hai
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$host_name = $_SERVER['HTTP_HOST'];
+
+/* ================= LOCALHOST ================= */
+if ($host_name === 'localhost') {
+
+    // IMPORTANT: yahan folder name soos_project hai
+    define('BASE_URL', 'http://localhost/SAAS_PROJECT/');
+
+    $db_host = "localhost";
+    $db_user = "root";
+    $db_pass = "";
+    $db_name = "saas";   // confirm your local database name
+
+/* ================= LIVE SERVER ================= */
 } else {
-    // InfinityFree settings (Online)
-    // Yahan main ne aapka naya path 'SaaS' update kar diya hai
-    define('BASE_URL', 'http://laiba-lms.great-site.net/SaaS/');
-    $host = "sql303.infinityfree.com"; 
-    $user = "if0_40800821";         
-    $password = "r7890laiba1"; 
-    // Isko check kar lena ke naye project ke liye database wahi hai ya naya banaya hai
-    $dbname = "if0_40800821_lms"; 
+
+    define('BASE_URL', 'https://laiba-lms.great-site.net/SaaS/');
+
+    $db_host = "sql303.infinityfree.com";
+    $db_user = "if0_40800821";
+    $db_pass = "r7890laiba1";
+    $db_name = "if0_40800821_lms";  // confirm live DB name
 }
 
-// 2. Create Connection
-$conn = new mysqli($host, $user, $password, $dbname);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
-// 3. Check Connection
-if($conn->connect_error){
-    die("Connection failed: " . $conn->connect_error);
+if ($conn->connect_error) {
+    die("Database Connection Failed: " . $conn->connect_error);
 }
 
-// Global variable for other members to use
-$db = $conn; 
+$db = $conn;
+
 ?>

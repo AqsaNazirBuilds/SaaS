@@ -1,3 +1,4 @@
+<?php include('../subscription/check_access.php'); ?>
 <?php
 // modules/audit/audit_view.php
 require_once(__DIR__ . '/../../config/db.php');

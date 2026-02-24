@@ -7,8 +7,33 @@ require_once(__DIR__ . '/plan_logic.php');
 $sub_logic = new Subscription($db);
 $plan_logic = new PlanLogic($db);
 
+// --- LAIBA'S LOGIC START ---
+// 1. Check kar rahy hain ke trial ya subscription expire toh nahi hui
+$is_blocked = $plan_logic->is_subscription_blocked(1); 
+
+// 2. Agar blocked hai (date 2025 hai), toh system ko yahi rok do
+if ($is_blocked) {
+    die("
+    <div style='height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: sans-serif;'>
+        <div style='background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 500px; border-top: 5px solid #ef4444;'>
+            <div style='font-size: 50px; margin-bottom: 20px;'>🚫</div>
+            <h2 style='color: #1e293b; margin-bottom: 15px;'>SYSTEM BLOCKED: TRIAL EXPIRED</h2>
+            <p style='color: #64748b; margin-bottom: 25px;'>Aapka plan 2025-03-01 ko khatam ho chuka hai. Agay barhne ke liye apna plan upgrade karein.</p>
+            <a href='upgrade_process.php' style='display: inline-block; background: #1f3b57; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Upgrade to Premium</a>
+            <div style='margin-top: 20px;'>
+                <a href='../../index.php' style='color: #94a3b8; text-decoration: none; font-size: 14px;'>Back to Home</a>
+            </div>
+        </div>
+    </div>
+    ");
+}
+// --- LAIBA'S LOGIC END ---
+
 $my_sub = $sub_logic->get_active_subscription(1);
+
+// Agar blocked nahi hai toh check karein active hai ya nahi
 $is_active = $sub_logic->is_valid($my_sub);
+
 $usage = $plan_logic->get_user_usage(1); 
 ?>
 
@@ -86,7 +111,7 @@ $usage = $plan_logic->get_user_usage(1);
                 </a>
                 
                 <div style="margin-top: 15px;">
-                    <a href="../../index.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+                    <a href="../../reports.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
                         <i class="fas fa-chevron-left"></i> Back to Dashboard
                     </a>
                 </div>

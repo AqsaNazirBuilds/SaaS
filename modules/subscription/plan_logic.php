@@ -120,8 +120,8 @@ class PlanLogic {
         
         $plan_id = $plan_data['plan_id'] ?? 1; 
         $plan_name = $plan_data['plan_name'] ?? 'Basic Plan'; // Added plan_name logic
-        $limit = ($plan_id == 2) ? 100 : ($plan_data['default_limit'] ?? 10);
 
+        $limit = $plan_data['default_limit'] ?? 10;
         // User Count
         $sql_count = "SELECT COUNT(id) as total FROM users WHERE tenant_id = ?";
         $stmt_count = $this->db->prepare($sql_count);
@@ -200,5 +200,44 @@ class PlanLogic {
         $stmt->execute();
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
+
+    // --- LAIBA'S RESPONSIBILITIES: NEW FUNCTIONS START HERE ---
+
+    // 1. Check if Subscription is Blocked (Expiry Logic)
+    public function is_subscription_blocked($tenant_id) {
+        $sql = "SELECT status, expiry_date, grace_period_end FROM subscriptions WHERE tenant_id = ? AND status = 'active' LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $tenant_id);
+        $stmt->execute();
+        $sub = $stmt->get_result()->fetch_assoc();
+
+        if (!$sub) return true; // Agar subscription nahi hai toh block kar do
+
+        $today = date('Y-m-d');
+        // Agar expiry date guzar chuki hai toh system block hona chahiye
+        if ($today > $sub['expiry_date']) {
+            return true; 
+        }
+        return false;
+    }
+
+    // 2. Check Feature Access (Plan Restrictions)
+    public function can_access_feature($tenant_id, $feature_name) {
+        $sql = "SELECT p.features_json FROM subscriptions s 
+                JOIN plans p ON s.plan_id = p.id 
+                WHERE s.tenant_id = ? AND s.status = 'active' LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $tenant_id);
+        $stmt->execute();
+        $data = $stmt->get_result()->fetch_assoc();
+
+        if (!$data) return false;
+
+        $features = json_decode($data['features_json'], true);
+        // Check karega ke JSON mein ye feature 'true' hai ya 'false'
+        return isset($features[$feature_name]) && $features[$feature_name] === true;
+    }
+    
+    // --- LAIBA'S RESPONSIBILITIES: END ---
 }
 ?>

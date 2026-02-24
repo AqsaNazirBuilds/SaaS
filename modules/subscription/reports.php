@@ -1,3 +1,4 @@
+<?php include('check_access.php'); ?>
 <?php
 require_once(__DIR__ . '/../../config/db.php');
 require_once(__DIR__ . '/plan_logic.php');

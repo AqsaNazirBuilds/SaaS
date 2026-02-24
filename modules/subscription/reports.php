@@ -4,17 +4,19 @@ require_once(__DIR__ . '/plan_logic.php');
 
 $plan_logic = new PlanLogic($db);
 
-// 1. Sab se pehle filter ko pakreinh
+// 1. Filter ko pakreinh
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
 
-// 2. Ab saare functions ko ye filter bhej dein (Agar aapki plan_logic file allow karti hai)
+// 2. Data fetch karein
 $usage = $plan_logic->get_user_usage(1); 
 $monthly_data = $plan_logic->get_monthly_logins(1, $filter);
 $reg_data = $plan_logic->get_monthly_registrations(1, $filter);
 $sales_data = $plan_logic->get_premium_sales(1, $filter);
-$top_users = $plan_logic->get_top_users(1, $filter);
+$top_users = $plan_logic->get_top_users(1, $filter); // Make sure SQL returns user_id
 $billing_details = $plan_logic->get_subscription_details(1);
 $recent_activities = $plan_logic->get_recent_activity(1);
+
+// Plan Check: Kya user Premium hai?
 $is_premium = ($usage['plan_id'] == 2);
 
 $total_sales_count = array_sum($sales_data['data']);
@@ -32,10 +34,9 @@ $revenue = $total_sales_count * 10;
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1f3b57; }
         .reports-container { max-width: 1100px; margin: auto; position: relative; }
         
-        /* 3+2 Stats Grid Layout */
         .stats-grid { 
             display: grid; 
-            grid-template-columns: repeat(6, 1fr); /* 6 columns for easy math */
+            grid-template-columns: repeat(6, 1fr); 
             gap: 20px; 
             margin-bottom: 30px; 
         }
@@ -46,17 +47,15 @@ $revenue = $total_sales_count * 10;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
             border-top: 2px solid #1f3b57;
             text-align: center;
-            grid-column: span 2; /* Each card takes 2 columns, so 3 cards in first row */
+            grid-column: span 2;
         }
-        /* Special class for bottom 2 cards to center them */
         .stat-box.bottom-card {
-            grid-column: span 3; /* Each takes 3 columns, so 2 cards fill the 6-column row */
+            grid-column: span 3;
         }
 
         .stat-label { color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; }
         .stat-value { color: #1f3b57; font-size: 24px; font-weight: bold; margin-top: 10px; display: block; }
 
-        /* Report Card Styling */
         .report-card { 
             background: #ffffff !important; 
             padding: 25px; 
@@ -67,10 +66,10 @@ $revenue = $total_sales_count * 10;
         }
         .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
 
-        /* Tables & Lists */
         .custom-table { width: 100%; border-collapse: collapse; }
         .custom-table th { text-align: left; padding: 15px; background: #1f3b57; color: white; font-size: 13px; }
         .custom-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        
         .user-row { 
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px; margin-bottom: 10px;
@@ -81,61 +80,72 @@ $revenue = $total_sales_count * 10;
         .badge-status { background: #ff8c42; color: white; padding: 4px 10px; border-radius: 50px; font-size: 11px; }
 
         .charts-double { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .blurred { filter: blur(5px); pointer-events: none; }
-
+        
+        /* Blur effect for Basic users */
+        .blurred { filter: blur(5px); pointer-events: none; user-select: none; }
 
         .btn-download {
-    background: #ff8c42; /* Landing page wala orange */
-    color: white;
-    padding: 12px 25px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    margin-left:600px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 10px rgba(255, 140, 66, 0.3);
-    transition: 0.3s ease;
-}
-
-.btn-download:hover {
-    background: #e67e32;
-    transform: translateY(-2px);
-}
+            background: #ff8c42;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s ease;
+        }
+        .btn-download:hover { background: #e67e32; transform: translateY(-2px); }
+        .btn-locked { background: #94a3b8; cursor: not-allowed; }
+        
+        .controls-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
 
 <div class="reports-container">
+    
+    <div class="report-header" style="margin-bottom: 25px; text-align: center;">
+        <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
+        <p>Your system's real-time performance overview</p>
+    </div>
+
+    <div class="controls-wrapper" id="no-export">
+        <div class="filter-section">
+            <label for="timeframe" style="font-weight: bold; margin-right: 10px;">View Stats For:</label>
+            <select id="timeframe" onchange="updateDashboard()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; cursor:pointer;">
+                <option value="7days" <?php echo ($filter == '7days') ? 'selected' : ''; ?>>Last 7 Days</option>
+                <option value="month" <?php echo ($filter == 'month') ? 'selected' : ''; ?>>This Month</option>
+                <option value="6months" <?php echo ($filter == '6months') ? 'selected' : ''; ?>>Last 6 Months</option>
+                <option value="year" <?php echo ($filter == 'year') ? 'selected' : ''; ?>>Full Year</option>
+            </select>
+        </div>
+
+        <?php if($is_premium): ?>
+            <button onclick="downloadPDF()" class="btn-download">
+                <i class="fas fa-file-pdf"></i> Download PDF Report
+            </button>
+        <?php else: ?>
+            <button class="btn-download btn-locked" onclick="alert('Please upgrade to Premium to download PDF reports')">
+                <i class="fas fa-lock"></i> PDF (Premium Feature)
+            </button>
+        <?php endif; ?>
+    </div>
+
     <div class="report-content <?php echo !$is_premium ? 'blurred' : ''; ?>">
         
-        <div class="report-header" style="margin-bottom: 25px; text-align: center;">
-            <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
-            <p>Your system's real-time performance overview</p>
-
-            
-        </div>
-    
-
-      <div class="filter-section" style="margin-bottom: 20px;">
-    <label for="timeframe" style="font-weight: bold; margin-right: 10px;">View Stats For:</label>
-    <select id="timeframe" onchange="updateDashboard()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-        <option value="7days">Last 7 Days</option>
-        <option value="month" selected>This Month</option>
-        <option value="6months">Last 6 Months</option>
-        <option value="year">Full Year</option>
-    </select>
-
-     <button onclick="downloadPDF()" class="btn-download">
-        <i class="fas fa-file-pdf"></i> Download PDF Report
-    </button>
-</div>
-
-
         <div class="stats-grid">
             <div class="stat-box">
                 <span class="stat-label">Total Users</span>
@@ -149,7 +159,6 @@ $revenue = $total_sales_count * 10;
                 <span class="stat-label">Status</span>
                 <span class="stat-value" style="color: #22c55e;">Active</span>
             </div>
-
             <div class="stat-box bottom-card">
                 <span class="stat-label">Total Revenue</span>
                 <span class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></span>
@@ -195,7 +204,11 @@ $revenue = $total_sales_count * 10;
             <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
             <?php foreach($top_users as $user): ?>
                 <div class="user-row">
-                    <span><strong><?php echo $user['username']; ?></strong></span>
+                    <span>
+                        <a href="user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;">
+                            <i class="fas fa-user-circle"></i> <?php echo $user['username']; ?>
+                        </a>
+                    </span>
                     <span class="badge-count"><?php echo $user['activity_count']; ?> Logins</span>
                 </div>
             <?php endforeach; ?>
@@ -222,19 +235,20 @@ $revenue = $total_sales_count * 10;
             <div style="height: 300px;"><canvas id="usageChart"></canvas></div>
         </div>
 
-    </div>
-</div>
+    </div> </div>
 
 <script>
+    // Chart Mapping
     function mapData(labels, counts) {
-        const months = ['January', 'February', 'March', 'April', 'May'];
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return months.map(m => {
             const i = labels.indexOf(m);
             return i !== -1 ? counts[i] : 0;
         });
     }
-    const ms = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
+    const ms = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+    // Registration Chart
     new Chart(document.getElementById('regChart'), {
         type: 'line',
         data: {
@@ -248,6 +262,7 @@ $revenue = $total_sales_count * 10;
         options: { responsive: true, maintainAspectRatio: false }
     });
 
+    // Sales Chart
     new Chart(document.getElementById('salesChart'), {
         type: 'bar',
         data: {
@@ -261,6 +276,7 @@ $revenue = $total_sales_count * 10;
         options: { responsive: true, maintainAspectRatio: false }
     });
 
+    // Usage Chart
     new Chart(document.getElementById('usageChart'), {
         type: 'bar',
         data: {
@@ -274,37 +290,31 @@ $revenue = $total_sales_count * 10;
         options: { responsive: true, maintainAspectRatio: false }
     });
 
+    // PDF Download
     function downloadPDF() {
-    // Wo hissa select karein jiska PDF banana hai
-    const element = document.querySelector('.report-content'); 
-    
-    // PDF ki settings
-    const opt = {
-        margin:       [10, 10],
-        filename:     'Business_Analytics_Report.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+        const element = document.querySelector('.report-content'); 
+        const noExport = document.getElementById('no-export');
+        
+        noExport.style.display = 'none';
 
-    // Button ko PDF mein na dikhane ke liye thori dair hide karna
-    const btn = document.querySelector('.btn-download');
-    btn.style.display = 'none';
+        const opt = {
+            margin:       10,
+            filename:     'Business_Analytics_Report.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
 
-    // PDF generate karein
-    html2pdf().set(opt).from(element).save().then(() => {
-        btn.style.display = 'inline-flex'; // PDF banne ke baad button wapas dikha dein
-    });
-}
+        html2pdf().set(opt).from(element).save().then(() => {
+            noExport.style.display = 'flex';
+        });
+    }
 
-function updateDashboard() {
-    const timeframe = document.getElementById('timeframe').value;
-    
-    // Yahan hum server ko batayenge ke humein naya data chahiye
-    // Abhi ke liye hum sirf page refresh kar rahe hain query parameter ke sath
-    // Taake PHP us timeframe ko pakar sakay
-    window.location.href = "reports.php?filter=" + timeframe;
-}
+    // Update Filter
+    function updateDashboard() {
+        const timeframe = document.getElementById('timeframe').value;
+        window.location.href = "reports.php?filter=" + timeframe;
+    }
 </script>
 </body>
 </html>

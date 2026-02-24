@@ -1,0 +1,191 @@
+/* Colors & Variables */
+:root {
+    --navy-blue: #1f3b57;
+    --orange: #ff8c42;
+    --light-gray: #f8fafc;
+    --border-gray: #e2e8f0;
+    --text-dark: #334155;
+    --text-muted: #64748b;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background-color: #f1f5f9;
+    margin: 0;
+    padding: 40px 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Header Section */
+.main-title {
+    text-align: center;
+    color: var(--navy-blue);
+    font-size: 27px;
+    margin-bottom: 50px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    position: relative;
+    padding-bottom: 15px;
+    font-weight: 650;
+}
+
+.main-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 45%;
+    width: 10%;
+    height: 4px;
+    background-color: var(--orange);
+    border-radius: 10px;
+}
+
+/* Layout */
+.content-wrapper {
+    display: flex;
+    gap: 27px;
+    align-items: stretch;
+}
+
+.profile-sidebar { flex: 1; min-width: 350px; }
+.logs-main { flex: 2.5; }
+
+/* Card Universal Styling */
+.card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 20px;
+    border: 1px solid var(--border-gray);
+    height: 100%;
+}
+
+.shadow { box-shadow: 0 15px 35px rgba(31, 59, 87, 0.08); }
+
+/* Profile Sidebar Design */
+.profile-img-container {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.profile-avatar {
+    width: 135px;
+    height: 135px;
+    border-radius: 50%;
+    border: 5px solid var(--orange);
+    padding: 5px;
+    box-shadow: 0 8px 20px rgba(255, 140, 66, 0.2);
+    object-fit: cover;
+}
+
+.profile-header-info { text-align: center; }
+.user-display-name { font-size: 24px; color: var(--navy-blue); margin: 10px 0 5px; font-weight: 700; }
+.user-display-role { color: var(--orange); font-weight: 600; font-size: 14px; margin: 0; }
+
+.divider { border: 0; border-top: 2px dashed var(--border-gray); margin: 30px 0; }
+
+/* Info Group - Making it look 'Full' */
+.info-details-box { text-align: left; }
+
+.info-group { 
+    margin-bottom: 20px; 
+    padding: 18px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border-left: 5px solid var(--navy-blue);
+}
+
+.info-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--navy-blue);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.info-group label i { color: var(--orange); font-size: 16px; }
+
+.highlight-text { 
+    font-size: 18px; 
+    margin: 0; 
+    color: var(--text-dark); 
+    font-weight: 700; 
+    word-break: break-all;
+}
+
+/* Status Badge - Bigger and Professional */
+.status-badge.active-status {
+    background: var(--navy-blue);
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-badge i { font-size: 10px; color: #00ff88; text-shadow: 0 0 5px #00ff88; }
+
+/* Table Section Styling */
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--navy-blue);
+    font-size: 20px;
+    border-bottom: 2px solid var(--orange);
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    font-weight: 700;
+}
+
+.table-container { max-height: 550px; overflow-y: auto; }
+.custom-table { width: 100%; border-collapse: collapse; }
+.custom-table th {
+    background: var(--navy-blue);
+    color: #ffffff;
+    padding: 16px;
+    text-align: left;
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.custom-table td { padding: 16px; border-bottom: 1px solid #f1f5f9; }
+.action-text { color: var(--navy-blue); font-weight: 600; font-size: 15px; }
+.time-text { color: var(--text-muted); font-size: 13px; font-weight: 500; }
+
+/* Footer & Back Button */
+.footer-actions { margin-top: 50px; text-align: center; }
+.back-btn {
+    margin-top: 30px;
+    text-decoration: none;
+    color: #ffffff;
+    background-color: var(--orange);
+    padding: 14px 26px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 20px rgba(255, 140, 66, 0.3);
+}
+
+.back-btn:hover { background-color: var(--navy-blue); transform: translateY(-4px); box-shadow: 0 12px 25px rgba(31, 59, 87, 0.2); }
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .content-wrapper { flex-direction: column; }
+    .profile-sidebar { width: 100%; }
+}

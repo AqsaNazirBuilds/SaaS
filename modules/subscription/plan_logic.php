@@ -90,10 +90,11 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 4. Most Active Users - UPDATED with Filter
+    // 4. Most Active Users - UPDATED (Added u.id to fetch user_id for the profile link)
     public function get_top_users($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'a.created_at');
-        $sql = "SELECT u.name as username, COUNT(a.id) as activity_count 
+        // SQL Query modified to include u.id as user_id
+        $sql = "SELECT u.id as user_id, u.name as username, COUNT(a.id) as activity_count 
                 FROM users u 
                 JOIN audit_logs a ON u.id = a.user_id 
                 WHERE a.tenant_id = ? AND a.action LIKE '%Login%' $date_cond

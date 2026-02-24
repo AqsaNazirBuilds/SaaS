@@ -5,13 +5,9 @@ require_once(__DIR__ . '/plan_logic.php');
 
 $plan_logic = new PlanLogic($db);
 
-// 1. FIX: Tenant ID ko dynamic kiya (Session se uthayega, warna default 1)
 $tid = $_SESSION['tenant_id'] ?? 1;
-
-// 1. Filter ko pakreinh
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
 
-// 2. Data fetch karein (Sahi Tenant ID use kiya)
 $usage = $plan_logic->get_user_usage($tid); 
 $monthly_data = $plan_logic->get_monthly_logins($tid, $filter);
 $reg_data = $plan_logic->get_monthly_registrations($tid, $filter);
@@ -20,12 +16,17 @@ $top_users = $plan_logic->get_top_users($tid, $filter);
 $billing_details = $plan_logic->get_subscription_details($tid);
 $recent_activities = $plan_logic->get_recent_activity($tid);
 
-// --- UPDATED LOGIC START ---
-// FIX: Plan ID 2 (Basic) aur 3 (Premium) dono ke liye PDF unlock rakha
-$can_download_pdf = ($usage['plan_id'] >= 2); 
-// --- UPDATED LOGIC END ---
+$plan_logic->sync_notifications($tid);
 
-// FIX: Revenue ko payment table se dynamic fetch kiya (Ab $10 wala chakkar khatam)
+// UPDATE: Sirf wahi notifications fetch hongi jo is_read = 0 hain
+$sql_notif = "SELECT * FROM notifications WHERE tenant_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 5";
+$stmt_n = $db->prepare($sql_notif);
+$stmt_n->bind_param("i", $tid);
+$stmt_n->execute();
+$notifications = $stmt_n->get_result()->fetch_all(MYSQLI_ASSOC);
+
+$total_sales_count = array_sum($sales_data['data']);
+$can_download_pdf = ($usage['plan_id'] >= 2); 
 $revenue = $plan_logic->get_total_revenue($tid);
 ?>
 <!DOCTYPE html>
@@ -54,14 +55,15 @@ $revenue = $plan_logic->get_total_revenue($tid);
         .status-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; color: white; font-weight: 600; }
         .badge-status { background: #ff8c42; color: white; padding: 4px 10px; border-radius: 50px; font-size: 11px; }
         .charts-double { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        /* Blur effect logic */
         .blurred { filter: blur(5px); pointer-events: none; user-select: none; }
-        
         .btn-download { background: #ff8c42; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s ease; }
         .btn-download:hover { background: #e67e32; transform: translateY(-2px); }
         .btn-locked { background: #94a3b8; cursor: not-allowed; }
         .controls-wrapper { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        /* Dismiss Button Style */
+        .dismiss-btn { background: none; border: none; color: #856404; cursor: pointer; font-size: 18px; opacity: 0.5; transition: 0.3s; }
+        .dismiss-btn:hover { opacity: 1; color: #000; }
     </style>
 </head>
 <body>
@@ -72,6 +74,23 @@ $revenue = $plan_logic->get_total_revenue($tid);
         <div class="report-header" style="margin-bottom: 25px; text-align: center;">
             <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
             <p>Your system's real-time performance overview</p>
+        </div>
+
+        <div class="notification-alerts" style="margin-bottom: 20px;">
+        <?php foreach($notifications as $notif): ?>
+            <div id="notif-<?php echo $notif['id']; ?>" style="background: #fff3cd; border-left: 5px solid #ffca2c; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div>
+                    <strong style="color: #856404; display: block; font-size: 14px;"><?php echo $notif['title']; ?></strong>
+                    <span style="font-size: 13px; color: #666;"><?php echo $notif['message']; ?></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <small style="color: #999; font-size: 11px;"><?php echo date('d M', strtotime($notif['created_at'])); ?></small>
+                    <button class="dismiss-btn" onclick="dismissNotif(<?php echo $notif['id']; ?>)" title="Dismiss">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            </div>
+        <?php endforeach; ?>
         </div>
 
         <div class="controls-wrapper" id="no-export">
@@ -190,6 +209,24 @@ $revenue = $plan_logic->get_total_revenue($tid);
 </div> 
 
 <script>
+    // New Function for Dismissing Notifications
+    function dismissNotif(id) {
+        fetch('mark_read.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id=' + id
+        })
+        .then(response => response.text())
+        .then(data => {
+            if(data === 'success') {
+                const element = document.getElementById('notif-' + id);
+                element.style.transition = "0.5s";
+                element.style.opacity = "0";
+                setTimeout(() => element.remove(), 500);
+            }
+        });
+    }
+
     function mapData(labels, counts) {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return months.map(m => {

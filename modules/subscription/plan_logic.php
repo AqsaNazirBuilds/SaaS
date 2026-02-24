@@ -82,6 +82,8 @@ public function get_total_revenue($tenant_id) {
     return $result['total'] ?? 0;
 }
 
+
+
     // 3. Premium Sales
     public function get_premium_sales($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'start_date');
@@ -249,6 +251,57 @@ public function get_total_revenue($tenant_id) {
         $features = json_decode($data['features_json'], true);
         return isset($features[$feature_name]) && $features[$feature_name] === true;
     }
+
+// 10. Check Expiry and Generate Notifications
+public function sync_notifications($tenant_id) {
+    // Pehle check karein ke plan ki expiry mein kitne din hain
+    $details = $this->get_subscription_details($tenant_id);
+    if (empty($details)) return;
+
+    $latest_plan = $details[0]; // Sabse naya plan uthayein
+    $days = $latest_plan['days_remaining'];
+    $title = "";
+    $msg = "";
+
+    // Conditions: Kab notification deni hai
+    if ($days < 0) {
+        $title = "Plan Expired";
+        $msg = "your account is blocked. Please renew karein.";
+    } elseif ($days <= 3) {
+        $title = "Urgent: Plan Expiring";
+        $msg = "your plan is expired in some days.";
+    } elseif ($days <= 50) {
+        $title = "Subscription Update";
+        $msg = "your plan is expired in some days.";
+    }
+
+    if ($title != "") {
+        // Check karein ke kya ye notification aaj pehle hi bhej di gayi hai?
+        // (Taake har refresh par nayi notification na bane)
+        $check_sql = "SELECT id FROM notifications WHERE tenant_id = ? AND title = ? AND DATE(created_at) = CURDATE()";
+        $stmt_c = $this->db->prepare($check_sql);
+        $stmt_c->bind_param("is", $tenant_id, $title);
+        $stmt_c->execute();
+        $exists = $stmt_c->get_result()->fetch_assoc();
+
+        if (!$exists) {
+            $ins_sql = "INSERT INTO notifications (tenant_id, title, message) VALUES (?, ?, ?)";
+            $stmt_i = $this->db->prepare($ins_sql);
+            $stmt_i->bind_param("iss", $tenant_id, $title, $msg);
+            $stmt_i->execute();
+        }
+    }
+}
+
+// 11. Get Notifications to Display
+public function get_notifications($tenant_id) {
+    $sql = "SELECT * FROM notifications WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 5";
+    $stmt = $this->db->prepare($sql);
+    $stmt->bind_param("i", $tenant_id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
 }
 
 

@@ -35,6 +35,8 @@ $logs = $db->query($query);
 </head>
 <body>
 
+<?php include(__DIR__ . '/../subscription/sidebar.php'); ?>
+
 <div class="main-wrapper"> 
     <div class="status-card">
         

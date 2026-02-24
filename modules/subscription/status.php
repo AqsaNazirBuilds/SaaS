@@ -22,7 +22,7 @@ $usage = $plan_logic->get_user_usage(1);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
+<?php include('sidebar.php'); ?>
 <div class="main-wrapper">
     <div class="status-card">
         <div class="card-header">

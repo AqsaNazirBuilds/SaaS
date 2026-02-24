@@ -12,7 +12,7 @@ $usage = $plan_logic->get_user_usage(1);
 $monthly_data = $plan_logic->get_monthly_logins(1, $filter);
 $reg_data = $plan_logic->get_monthly_registrations(1, $filter);
 $sales_data = $plan_logic->get_premium_sales(1, $filter);
-$top_users = $plan_logic->get_top_users(1, $filter); // Make sure SQL returns user_id
+$top_users = $plan_logic->get_top_users(1, $filter); 
 $billing_details = $plan_logic->get_subscription_details(1);
 $recent_activities = $plan_logic->get_recent_activity(1);
 
@@ -31,7 +31,9 @@ $revenue = $total_sales_count * 10;
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 20px; color: #1f3b57; }
+        /* FIXED: Body margin 0 kiya taake sidebar sahi bethay */
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 0; color: #1f3b57; }
+        
         .reports-container { max-width: 1100px; margin: auto; position: relative; }
         
         .stats-grid { 
@@ -114,130 +116,132 @@ $revenue = $total_sales_count * 10;
     </style>
 </head>
 <body>
+<?php include('sidebar.php'); ?>
 
-<div class="reports-container">
-    
-    <div class="report-header" style="margin-bottom: 25px; text-align: center;">
-        <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
-        <p>Your system's real-time performance overview</p>
-    </div>
+<div class="main-wrapper"> 
 
-    <div class="controls-wrapper" id="no-export">
-        <div class="filter-section">
-            <label for="timeframe" style="font-weight: bold; margin-right: 10px;">View Stats For:</label>
-            <select id="timeframe" onchange="updateDashboard()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; cursor:pointer;">
-                <option value="7days" <?php echo ($filter == '7days') ? 'selected' : ''; ?>>Last 7 Days</option>
-                <option value="month" <?php echo ($filter == 'month') ? 'selected' : ''; ?>>This Month</option>
-                <option value="6months" <?php echo ($filter == '6months') ? 'selected' : ''; ?>>Last 6 Months</option>
-                <option value="year" <?php echo ($filter == 'year') ? 'selected' : ''; ?>>Full Year</option>
-            </select>
-        </div>
-
-        <?php if($is_premium): ?>
-            <button onclick="downloadPDF()" class="btn-download">
-                <i class="fas fa-file-pdf"></i> Download PDF Report
-            </button>
-        <?php else: ?>
-            <button class="btn-download btn-locked" onclick="alert('Please upgrade to Premium to download PDF reports')">
-                <i class="fas fa-lock"></i> PDF (Premium Feature)
-            </button>
-        <?php endif; ?>
-    </div>
-
-    <div class="report-content <?php echo !$is_premium ? 'blurred' : ''; ?>">
+    <div class="reports-container">
         
-        <div class="stats-grid">
-            <div class="stat-box">
-                <span class="stat-label">Total Users</span>
-                <span class="stat-value"><?php echo $usage['current']; ?> / <?php echo $usage['limit']; ?></span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">Login Count</span>
-                <span class="stat-value"><?php echo $usage['logins_total']; ?></span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">Status</span>
-                <span class="stat-value" style="color: #22c55e;">Active</span>
-            </div>
-            <div class="stat-box bottom-card">
-                <span class="stat-label">Total Revenue</span>
-                <span class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></span>
-            </div>
-            <div class="stat-box bottom-card">
-                <span class="stat-label">New Registrations</span>
-                <span class="stat-value"><?php echo array_sum($reg_data['data']); ?></span>
-            </div>
+        <div class="report-header" style="margin-bottom: 25px; text-align: center;">
+            <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
+            <p>Your system's real-time performance overview</p>
         </div>
 
-        <div class="charts-double">
-            <div class="report-card">
-                <div class="card-title"><i class="fas fa-user-plus" style="color:#0ea5e9;"></i> User Registration</div>
-                <div style="height: 250px;"><canvas id="regChart"></canvas></div>
+        <div class="controls-wrapper" id="no-export">
+            <div class="filter-section">
+                <label for="timeframe" style="font-weight: bold; margin-right: 10px;">View Stats For:</label>
+                <select id="timeframe" onchange="updateDashboard()" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; cursor:pointer;">
+                    <option value="7days" <?php echo ($filter == '7days') ? 'selected' : ''; ?>>Last 7 Days</option>
+                    <option value="month" <?php echo ($filter == 'month') ? 'selected' : ''; ?>>This Month</option>
+                    <option value="6months" <?php echo ($filter == '6months') ? 'selected' : ''; ?>>Last 6 Months</option>
+                    <option value="year" <?php echo ($filter == 'year') ? 'selected' : ''; ?>>Full Year</option>
+                </select>
             </div>
-            <div class="report-card">
-                <div class="card-title"><i class="fas fa-shopping-cart" style="color:#22c55e;"></i> Premium Sales</div>
-                <div style="height: 250px;"><canvas id="salesChart"></canvas></div>
-            </div>
+
+            <?php if($is_premium): ?>
+                <button onclick="downloadPDF()" class="btn-download">
+                    <i class="fas fa-file-pdf"></i> Download PDF Report
+                </button>
+            <?php else: ?>
+                <button class="btn-download btn-locked" onclick="alert('Please upgrade to Premium to download PDF reports')">
+                    <i class="fas fa-lock"></i> PDF (Premium Feature)
+                </button>
+            <?php endif; ?>
         </div>
 
-        <div class="report-card">
-            <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
-            <table class="custom-table">
-                <thead>
-                    <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    <?php foreach($billing_details as $bill): ?>
-                    <tr>
-                        <td><strong><?php echo $bill['plan_name']; ?></strong></td>
-                        <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
-                        <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
-                        <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
-                        <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="report-card">
-            <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
-            <?php foreach($top_users as $user): ?>
-                <div class="user-row">
-                    <span>
-                        <a href="user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;">
-                            <i class="fas fa-user-circle"></i> <?php echo $user['username']; ?>
-                        </a>
-                    </span>
-                    <span class="badge-count"><?php echo $user['activity_count']; ?> Logins</span>
+        <div class="report-content <?php echo !$is_premium ? 'blurred' : ''; ?>">
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-label">Total Users</span>
+                    <span class="stat-value"><?php echo $usage['current']; ?> / <?php echo $usage['limit']; ?></span>
                 </div>
-            <?php endforeach; ?>
-        </div>
+                <div class="stat-box">
+                    <span class="stat-label">Login Count</span>
+                    <span class="stat-value"><?php echo $usage['logins_total']; ?></span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value" style="color: #22c55e;">Active</span>
+                </div>
+                <div class="stat-box bottom-card">
+                    <span class="stat-label">Total Revenue</span>
+                    <span class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></span>
+                </div>
+                <div class="stat-box bottom-card">
+                    <span class="stat-label">New Registrations</span>
+                    <span class="stat-value"><?php echo array_sum($reg_data['data']); ?></span>
+                </div>
+            </div>
 
-        <div class="report-card">
-            <div class="card-title"><i class="fas fa-tasks" style="color: #ff8c42;"></i> Recent System Activity</div>
-            <table class="custom-table">
-                <thead><tr><th>Action</th><th>Time & Date</th><th>Result</th></tr></thead>
-                <tbody>
-                    <?php foreach($recent_activities as $activity): ?>
-                    <tr>
-                        <td><strong><?php echo $activity['action']; ?></strong></td>
-                        <td><?php echo date('d M, Y | h:i A', strtotime($activity['created_at'])); ?></td>
-                        <td><span class="badge-status">Logged</span></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+            <div class="charts-double">
+                <div class="report-card">
+                    <div class="card-title"><i class="fas fa-user-plus" style="color:#0ea5e9;"></i> User Registration</div>
+                    <div style="height: 250px;"><canvas id="regChart"></canvas></div>
+                </div>
+                <div class="report-card">
+                    <div class="card-title"><i class="fas fa-shopping-cart" style="color:#22c55e;"></i> Premium Sales</div>
+                    <div style="height: 250px;"><canvas id="salesChart"></canvas></div>
+                </div>
+            </div>
 
-        <div class="report-card">
-            <div class="card-title"><i class="fas fa-history" style="color:#1f3b57;"></i> Monthly Login Activity</div>
-            <div style="height: 300px;"><canvas id="usageChart"></canvas></div>
-        </div>
+            <div class="report-card">
+                <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
+                <table class="custom-table">
+                    <thead>
+                        <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($billing_details as $bill): ?>
+                        <tr>
+                            <td><strong><?php echo $bill['plan_name']; ?></strong></td>
+                            <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
+                            <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
+                            <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
+                            <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
 
-    </div> </div>
+            <div class="report-card">
+                <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
+                <?php foreach($top_users as $user): ?>
+                    <div class="user-row">
+                        <span>
+                            <a href="user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;">
+                                <i class="fas fa-user-circle"></i> <?php echo $user['username']; ?>
+                            </a>
+                        </span>
+                        <span class="badge-count"><?php echo $user['activity_count']; ?> Logins</span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
 
-<script>
+            <div class="report-card">
+                <div class="card-title"><i class="fas fa-tasks" style="color: #ff8c42;"></i> Recent System Activity</div>
+                <table class="custom-table">
+                    <thead><tr><th>Action</th><th>Time & Date</th><th>Result</th></tr></thead>
+                    <tbody>
+                        <?php foreach($recent_activities as $activity): ?>
+                        <tr>
+                            <td><strong><?php echo $activity['action']; ?></strong></td>
+                            <td><?php echo date('d M, Y | h:i A', strtotime($activity['created_at'])); ?></td>
+                            <td><span class="badge-status">Logged</span></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="report-card">
+                <div class="card-title"><i class="fas fa-history" style="color:#1f3b57;"></i> Monthly Login Activity</div>
+                <div style="height: 300px;"><canvas id="usageChart"></canvas></div>
+            </div>
+
+        </div> 
+    </div> </div> <script>
     // Chart Mapping
     function mapData(labels, counts) {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

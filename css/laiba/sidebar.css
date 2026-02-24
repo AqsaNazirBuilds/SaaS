@@ -1,8 +1,8 @@
 /* Sidebar Main Style */
 .sidebar {
-    width: 280px;
+    width: 260px; /* Thori width barha di hai readability ke liye */
     height: 100vh;
-    background-color: #1f3b57; /* Professional Navy Blue */
+    background-color:  #64748b; /* Navy Blue/Slate Gray Professional Look */
     position: fixed;
     top: 0;
     left: 0;
@@ -22,7 +22,7 @@
 }
 
 .logo-icon {
-    background: #ff8c42; /* Orange Accent */
+    background: orange; 
     width: 35px;
     height: 35px;
     display: flex;
@@ -38,8 +38,6 @@
     font-weight: 700;
     letter-spacing: 1px;
 }
-
-.logo-text span { color: #ff8c42; }
 
 /* Navigation Links */
 .nav-links {
@@ -65,26 +63,28 @@
 
 .nav-link:hover {
     background: rgba(255, 140, 66, 0.1);
-    color: #ff8c42;
+    color: white;
     transform: translateX(5px);
 }
-
-.nav-link i { font-size: 18px; width: 25px; }
 
 /* User Profile Footer */
 .sidebar-footer {
     padding: 20px;
-    background: #162a3e;
+    background: #0f172a; /* Slightly darker than sidebar */
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.sidebar-footer img {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    border: 2px solid #ff8c42;
+/* Avatar styling taake generic icon saaf nazar aaye */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .user-info { display: flex; flex-direction: column; }
@@ -96,13 +96,16 @@
 }
 
 .user-role {
-    color: #64748b;
+    color: #94a3b8;
     font-size: 11px;
 }
 
-/* Page content ko sidebar se side par rakhne ke liye */
+/* Page content adjustment */
 .main-wrapper {
-    margin-left: 280px;
+    margin-left: 260px; 
     padding: 30px;
-    width: calc(100% - 280px);
+    width: calc(100% - 260px);
+    box-sizing: border-box;
+    min-height: 100vh;
+    background: #f8fafc;
 }

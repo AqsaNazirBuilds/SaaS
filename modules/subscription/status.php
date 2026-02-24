@@ -11,14 +11,14 @@ $plan_logic = new PlanLogic($db);
 // 1. Check kar rahy hain ke trial ya subscription expire toh nahi hui
 $is_blocked = $plan_logic->is_subscription_blocked(1); 
 
-// 2. Agar blocked hai (date 2025 hai), toh system ko yahi rok do
+// 2. Agar blocked hai (date purani hai), toh system ko yahi rok do
 if ($is_blocked) {
     die("
     <div style='height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: sans-serif;'>
         <div style='background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 500px; border-top: 5px solid #ef4444;'>
             <div style='font-size: 50px; margin-bottom: 20px;'>🚫</div>
             <h2 style='color: #1e293b; margin-bottom: 15px;'>SYSTEM BLOCKED: TRIAL EXPIRED</h2>
-            <p style='color: #64748b; margin-bottom: 25px;'>Aapka plan 2025-03-01 ko khatam ho chuka hai. Agay barhne ke liye apna plan upgrade karein.</p>
+            <p style='color: #64748b; margin-bottom: 25px;'>Aapka plan khatam ho chuka hai. Agay barhne ke liye apna plan upgrade karein.</p>
             <a href='upgrade_process.php' style='display: inline-block; background: #1f3b57; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Upgrade to Premium</a>
             <div style='margin-top: 20px;'>
                 <a href='../../index.php' style='color: #94a3b8; text-decoration: none; font-size: 14px;'>Back to Home</a>
@@ -64,11 +64,11 @@ $usage = $plan_logic->get_user_usage(1);
             <div class="info-grid">
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-crown"></i> CURRENT PLAN</span>
-                    <h3 class="box-value"><?php echo $usage['plan_name']; ?></h3>
+                    <h3 class="box-value"><?php echo ($usage['plan_id'] == 2) ? "Premium Plan" : "Basic Plan"; ?></h3>
                 </div>
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-calendar-alt"></i> EXPIRY DATE</span>
-                    <h3 class="box-value"><?php echo $my_sub['expiry_date'] ?? '2026-03-01'; ?></h3>
+                    <h3 class="box-value"><?php echo $my_sub['expiry_date'] ?? 'N/A'; ?></h3>
                 </div>
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-users"></i> USER LIMIT</span>
@@ -105,10 +105,16 @@ $usage = $plan_logic->get_user_usage(1);
                 </ul>
             </div>
 
-               <div class="action-area" style="margin-top: 30px; text-align: center;">
-                <a href="upgrade_process.php" class="btn-manage" style="display: block; width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; text-decoration: none; box-sizing: border-box; transition: 0.3s; cursor: pointer;">
-                    <i class="fas fa-arrow-up"></i> Upgrade to Premium Plan
-                </a>
+            <div class="action-area" style="margin-top: 30px; text-align: center;">
+                <?php if($usage['plan_id'] != 2): ?>
+                    <a href="upgrade_process.php" class="btn-manage" style="display: block; width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; text-decoration: none; box-sizing: border-box; transition: 0.3s; cursor: pointer;">
+                        <i class="fas fa-arrow-up"></i> Upgrade to Premium Plan
+                    </a>
+                <?php else: ?>
+                    <div style="padding: 14px; background: #22c55e; color: white; border-radius: 8px; font-weight: 700;">
+                        <i class="fas fa-check-double"></i> You are on Premium Plan
+                    </div>
+                <?php endif; ?>
                 
                 <div style="margin-top: 15px;">
                     <a href="../../reports.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">

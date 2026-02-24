@@ -17,8 +17,10 @@ $top_users = $plan_logic->get_top_users(1, $filter);
 $billing_details = $plan_logic->get_subscription_details(1);
 $recent_activities = $plan_logic->get_recent_activity(1);
 
-// Plan Check: Kya user Premium hai?
-$is_premium = ($usage['plan_id'] == 2);
+// --- UPDATED LOGIC START ---
+// Hum seedha $usage['plan_id'] check kar rahe hain kyunke database mein value 2 hai
+$can_download_pdf = ($usage['plan_id'] == 2); 
+// --- UPDATED LOGIC END ---
 
 $total_sales_count = array_sum($sales_data['data']);
 $revenue = $total_sales_count * 10;
@@ -32,97 +34,38 @@ $revenue = $total_sales_count * 10;
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* FIXED: Body margin 0 kiya taake sidebar sahi bethay */
         body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 0; color: #1f3b57; }
-        
         .reports-container { max-width: 1100px; margin: auto; position: relative; }
-        
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(6, 1fr); 
-            gap: 20px; 
-            margin-bottom: 30px; 
-        }
-        .stat-box { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-            border-top: 2px solid #1f3b57;
-            text-align: center;
-            grid-column: span 2;
-        }
-        .stat-box.bottom-card {
-            grid-column: span 3;
-        }
-
+        .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 2px solid #1f3b57; text-align: center; grid-column: span 2; }
+        .stat-box.bottom-card { grid-column: span 3; }
         .stat-label { color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; }
         .stat-value { color: #1f3b57; font-size: 24px; font-weight: bold; margin-top: 10px; display: block; }
-
-        .report-card { 
-            background: #ffffff !important; 
-            padding: 25px; 
-            border-radius: 15px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06); 
-            margin-bottom: 30px;
-            border: 1px solid #e2e8f0;
-        }
+        .report-card { background: #ffffff !important; padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 30px; border: 1px solid #e2e8f0; }
         .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-
         .custom-table { width: 100%; border-collapse: collapse; }
         .custom-table th { text-align: left; padding: 15px; background: #1f3b57; color: white; font-size: 13px; }
         .custom-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        
-        .user-row { 
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; margin-bottom: 10px;
-            background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;
-        }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
         .badge-count { background: #1f3b57; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; }
         .status-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; color: white; font-weight: 600; }
         .badge-status { background: #ff8c42; color: white; padding: 4px 10px; border-radius: 50px; font-size: 11px; }
-
         .charts-double { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         
-        /* Blur effect for Basic users */
+        /* Blur effect logic */
         .blurred { filter: blur(5px); pointer-events: none; user-select: none; }
-
-        .btn-download {
-            background: #ff8c42;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            transition: 0.3s ease;
-        }
+        
+        .btn-download { background: #ff8c42; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s ease; }
         .btn-download:hover { background: #e67e32; transform: translateY(-2px); }
         .btn-locked { background: #94a3b8; cursor: not-allowed; }
-        
-        .controls-wrapper {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        .controls-wrapper { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 <?php include('sidebar.php'); ?>
 
 <div class="main-wrapper"> 
-
     <div class="reports-container">
-        
         <div class="report-header" style="margin-bottom: 25px; text-align: center;">
             <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
             <p>Your system's real-time performance overview</p>
@@ -139,19 +82,18 @@ $revenue = $total_sales_count * 10;
                 </select>
             </div>
 
-            <?php if($is_premium): ?>
+            <?php if($can_download_pdf): ?>
                 <button onclick="downloadPDF()" class="btn-download">
                     <i class="fas fa-file-pdf"></i> Download PDF Report
                 </button>
             <?php else: ?>
                 <button class="btn-download btn-locked" onclick="alert('Please upgrade to Premium to download PDF reports')">
-                    <i class="fas fa-lock"></i> PDF (Premium Feature)
+                    <i class="fas fa-lock"></i> PDF Locked (Premium Only)
                 </button>
             <?php endif; ?>
         </div>
 
-        <div class="report-content <?php echo !$is_premium ? 'blurred' : ''; ?>">
-            
+        <div class="report-content <?php echo ($usage['plan_id'] != 2) ? 'blurred' : ''; ?>">
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Total Users</span>
@@ -187,25 +129,24 @@ $revenue = $total_sales_count * 10;
             </div>
 
             <div class="report-card">
-                <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
-                <table class="custom-table">
-                    <thead>
-                        <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach($billing_details as $bill): ?>
-                        <tr>
-                            <td><strong><?php echo $bill['plan_name']; ?></strong></td>
-                            <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
-                            <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
-                            <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
-                            <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
+    <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
+    <table class="custom-table">
+        <thead>
+            <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            <?php foreach($billing_details as $bill): ?>
+            <tr>
+                <td><strong><?php echo ($bill['plan_name'] == 'Basic Plan' && $usage['plan_id'] == 2) ? "Premium Plan" : $bill['plan_name']; ?></strong></td>
+                <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
+                <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
+                <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
+                <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
             <div class="report-card">
                 <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
                 <?php foreach($top_users as $user): ?>
@@ -240,10 +181,11 @@ $revenue = $total_sales_count * 10;
                 <div class="card-title"><i class="fas fa-history" style="color:#1f3b57;"></i> Monthly Login Activity</div>
                 <div style="height: 300px;"><canvas id="usageChart"></canvas></div>
             </div>
-
         </div> 
-    </div> </div> <script>
-    // Chart Mapping
+    </div> 
+</div> 
+
+<script>
     function mapData(labels, counts) {
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         return months.map(m => {
@@ -253,7 +195,6 @@ $revenue = $total_sales_count * 10;
     }
     const ms = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    // Registration Chart
     new Chart(document.getElementById('regChart'), {
         type: 'line',
         data: {
@@ -267,7 +208,6 @@ $revenue = $total_sales_count * 10;
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // Sales Chart
     new Chart(document.getElementById('salesChart'), {
         type: 'bar',
         data: {
@@ -281,7 +221,6 @@ $revenue = $total_sales_count * 10;
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // Usage Chart
     new Chart(document.getElementById('usageChart'), {
         type: 'bar',
         data: {
@@ -295,27 +234,22 @@ $revenue = $total_sales_count * 10;
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // PDF Download
     function downloadPDF() {
         const element = document.querySelector('.report-content'); 
         const noExport = document.getElementById('no-export');
-        
         noExport.style.display = 'none';
-
         const opt = {
-            margin:       10,
-            filename:     'Business_Analytics_Report.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: 10,
+            filename: 'Business_Analytics_Report.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-
         html2pdf().set(opt).from(element).save().then(() => {
             noExport.style.display = 'flex';
         });
     }
 
-    // Update Filter
     function updateDashboard() {
         const timeframe = document.getElementById('timeframe').value;
         window.location.href = "reports.php?filter=" + timeframe;

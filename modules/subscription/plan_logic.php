@@ -24,7 +24,7 @@ class PlanLogic {
         }
     }
 
-    // 1. Monthly Logins (audit_logs table) - UPDATED with Filter
+    // 1. Monthly Logins
     public function get_monthly_logins($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'created_at');
         $sql = "SELECT MONTHNAME(created_at) as month, COUNT(*) as total 
@@ -46,7 +46,7 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 2. User Registration (users table) - UPDATED with Filter
+    // 2. User Registration
     public function get_monthly_registrations($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'created_at');
         $sql = "SELECT MONTHNAME(created_at) as month, COUNT(*) as total 
@@ -68,7 +68,7 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 3. Premium Sales (subscriptions table) - UPDATED with Filter
+    // 3. Premium Sales
     public function get_premium_sales($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'start_date');
         $sql = "SELECT MONTHNAME(start_date) as month, COUNT(*) as total 
@@ -90,10 +90,9 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
-    // 4. Most Active Users - UPDATED (Added u.id to fetch user_id for the profile link)
+    // 4. Most Active Users
     public function get_top_users($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'a.created_at');
-        // SQL Query modified to include u.id as user_id
         $sql = "SELECT u.id as user_id, u.name as username, COUNT(a.id) as activity_count 
                 FROM users u 
                 JOIN audit_logs a ON u.id = a.user_id 
@@ -107,7 +106,7 @@ class PlanLogic {
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
-    // 5. User Usage Summary
+    // 5. User Usage Summary (FIXED VERSION)
     public function get_user_usage($tenant_id) {
         $sql = "SELECT p.user_limit as default_limit, p.plan_name, s.plan_id 
                 FROM subscriptions s 
@@ -120,6 +119,7 @@ class PlanLogic {
         $plan_data = $stmt->get_result()->fetch_assoc();
         
         $plan_id = $plan_data['plan_id'] ?? 1; 
+        $plan_name = $plan_data['plan_name'] ?? 'Basic Plan'; // Added plan_name logic
         $limit = ($plan_id == 2) ? 100 : ($plan_data['default_limit'] ?? 10);
 
         // User Count
@@ -143,11 +143,12 @@ class PlanLogic {
             'current' => $current_users,
             'logins_total' => $total_logins, 
             'plan_id' => $plan_id,
+            'plan_name' => $plan_name, // YAHAN MASLA THA: Ye key missing thi jo ab add kar di hai
             'percentage' => round($percentage, 0)
         ];
     }
 
-    // 🟢 Subscription Billing & Expiry Details
+    // Subscription Billing & Expiry Details
     public function get_subscription_details($tenant_id)
     {
         $sql = "SELECT s.id, p.plan_name, s.start_date, s.expiry_date, s.status 
@@ -187,7 +188,7 @@ class PlanLogic {
         return $subscriptions;
     }
 
-    // 🟢 Recent Activity Logs
+    // Recent Activity Logs
     public function get_recent_activity($tenant_id) {
         $sql = "SELECT action, created_at 
                 FROM audit_logs 

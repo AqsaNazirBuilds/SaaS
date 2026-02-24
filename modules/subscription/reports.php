@@ -5,25 +5,28 @@ require_once(__DIR__ . '/plan_logic.php');
 
 $plan_logic = new PlanLogic($db);
 
+// 1. FIX: Tenant ID ko dynamic kiya (Session se uthayega, warna default 1)
+$tid = $_SESSION['tenant_id'] ?? 1;
+
 // 1. Filter ko pakreinh
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'month';
 
-// 2. Data fetch karein
-$usage = $plan_logic->get_user_usage(1); 
-$monthly_data = $plan_logic->get_monthly_logins(1, $filter);
-$reg_data = $plan_logic->get_monthly_registrations(1, $filter);
-$sales_data = $plan_logic->get_premium_sales(1, $filter);
-$top_users = $plan_logic->get_top_users(1, $filter); 
-$billing_details = $plan_logic->get_subscription_details(1);
-$recent_activities = $plan_logic->get_recent_activity(1);
+// 2. Data fetch karein (Sahi Tenant ID use kiya)
+$usage = $plan_logic->get_user_usage($tid); 
+$monthly_data = $plan_logic->get_monthly_logins($tid, $filter);
+$reg_data = $plan_logic->get_monthly_registrations($tid, $filter);
+$sales_data = $plan_logic->get_premium_sales($tid, $filter);
+$top_users = $plan_logic->get_top_users($tid, $filter); 
+$billing_details = $plan_logic->get_subscription_details($tid);
+$recent_activities = $plan_logic->get_recent_activity($tid);
 
 // --- UPDATED LOGIC START ---
-// Hum seedha $usage['plan_id'] check kar rahe hain kyunke database mein value 2 hai
-$can_download_pdf = ($usage['plan_id'] == 2); 
+// FIX: Plan ID 2 (Basic) aur 3 (Premium) dono ke liye PDF unlock rakha
+$can_download_pdf = ($usage['plan_id'] >= 2); 
 // --- UPDATED LOGIC END ---
 
-$total_sales_count = array_sum($sales_data['data']);
-$revenue = $total_sales_count * 10;
+// FIX: Revenue ko payment table se dynamic fetch kiya (Ab $10 wala chakkar khatam)
+$revenue = $plan_logic->get_total_revenue($tid);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -93,7 +96,7 @@ $revenue = $total_sales_count * 10;
             <?php endif; ?>
         </div>
 
-        <div class="report-content <?php echo ($usage['plan_id'] != 2) ? 'blurred' : ''; ?>">
+        <div class="report-content <?php echo ($usage['plan_id'] == 1) ? 'blurred' : ''; ?>">
             <div class="stats-grid">
                 <div class="stat-box">
                     <span class="stat-label">Total Users</span>
@@ -101,7 +104,7 @@ $revenue = $total_sales_count * 10;
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Login Count</span>
-                    <span class="stat-value"><?php echo $usage['logins_total']; ?></span>
+                    <span class="stat-value"><?php echo $usage['logins_total'] ?? 0; ?></span>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">Status</span>
@@ -109,7 +112,7 @@ $revenue = $total_sales_count * 10;
                 </div>
                 <div class="stat-box bottom-card">
                     <span class="stat-label">Total Revenue</span>
-                    <span class="stat-value" style="color: #22c55e;">$<?php echo $revenue; ?></span>
+                    <span class="stat-value" style="color: #22c55e;">$<?php echo number_format($revenue, 2); ?></span>
                 </div>
                 <div class="stat-box bottom-card">
                     <span class="stat-label">New Registrations</span>
@@ -129,24 +132,25 @@ $revenue = $total_sales_count * 10;
             </div>
 
             <div class="report-card">
-    <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
-    <table class="custom-table">
-        <thead>
-            <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-            <?php foreach($billing_details as $bill): ?>
-            <tr>
-                <td><strong><?php echo ($bill['plan_name'] == 'Basic Plan' && $usage['plan_id'] == 2) ? "Premium Plan" : $bill['plan_name']; ?></strong></td>
-                <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
-                <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
-                <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
-                <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
+                <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
+                <table class="custom-table">
+                    <thead>
+                        <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($billing_details as $bill): ?>
+                        <tr>
+                            <td><strong><?php echo $bill['plan_name']; ?></strong></td>
+                            <td><?php echo date('M d, Y', strtotime($bill['start_date'])); ?></td>
+                            <td><?php echo date('M d, Y', strtotime($bill['expiry_date'])); ?></td>
+                            <td><?php echo ($bill['days_remaining'] > 0) ? $bill['days_remaining'] . " Days" : "Expired"; ?></td>
+                            <td><span class="status-pill" style="background: <?php echo $bill['color']; ?>"><?php echo $bill['status_tag']; ?></span></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
             <div class="report-card">
                 <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
                 <?php foreach($top_users as $user): ?>
@@ -201,7 +205,7 @@ $revenue = $total_sales_count * 10;
             labels: ms,
             datasets: [{
                 label: 'Users',
-                data: mapData(<?php echo json_encode($reg_data['labels']); ?>, <?php echo json_encode($reg_data['data']); ?>),
+                data: mapData(<?php echo json_encode($reg_data['labels'] ?? []); ?>, <?php echo json_encode($reg_data['data'] ?? []); ?>),
                 borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4
             }]
         },
@@ -214,7 +218,7 @@ $revenue = $total_sales_count * 10;
             labels: ms,
             datasets: [{
                 label: 'Sales',
-                data: mapData(<?php echo json_encode($sales_data['labels']); ?>, <?php echo json_encode($sales_data['data']); ?>),
+                data: mapData(<?php echo json_encode($sales_data['labels'] ?? []); ?>, <?php echo json_encode($sales_data['data'] ?? []); ?>),
                 backgroundColor: '#22c55e', borderRadius: 5
             }]
         },
@@ -227,7 +231,7 @@ $revenue = $total_sales_count * 10;
             labels: ms,
             datasets: [{
                 label: 'Logins',
-                data: mapData(<?php echo json_encode($monthly_data['labels']); ?>, <?php echo json_encode($monthly_data['data']); ?>),
+                data: mapData(<?php echo json_encode($monthly_data['labels'] ?? []); ?>, <?php echo json_encode($monthly_data['data'] ?? []); ?>),
                 backgroundColor: '#1f3b57', borderRadius: 8
             }]
         },

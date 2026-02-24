@@ -1,3 +1,4 @@
+
 <?php
 // modules/subscription/plan_logic.php
 require_once(__DIR__ . '/../../config/db.php');
@@ -68,12 +69,25 @@ class PlanLogic {
         return ['labels' => $months, 'data' => $counts];
     }
 
+
+    // 2. Total Revenue (Ab reports.php mein error nahi aayega)
+public function get_total_revenue($tenant_id) {
+    $sql = "SELECT SUM(amount) as total FROM payments WHERE tenant_id = ?";
+    $stmt = $this->db->prepare($sql);
+    $stmt->bind_param("i", $tenant_id);
+    $stmt->execute();
+    $result = $stmt->get_result()->fetch_assoc();
+    
+    // Agar koi payment nahi mili toh 0 return karega
+    return $result['total'] ?? 0;
+}
+
     // 3. Premium Sales
     public function get_premium_sales($tenant_id, $filter = 'month') {
         $date_cond = $this->get_date_condition($filter, 'start_date');
         $sql = "SELECT MONTHNAME(start_date) as month, COUNT(*) as total 
                 FROM subscriptions 
-                WHERE tenant_id = ? AND plan_id = 2 $date_cond
+                WHERE tenant_id = ? AND plan_id = 3 $date_cond
                 GROUP BY MONTH(start_date) 
                 ORDER BY start_date ASC LIMIT 5";
         
@@ -106,9 +120,10 @@ class PlanLogic {
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
-    // 5. User Usage Summary (FIXED AND SMART VERSION)
+    // 5. User Usage Summary (FIXED: Dynamic Limit from Database)
     public function get_user_usage($tenant_id) {
-        $sql = "SELECT p.user_limit as default_limit, p.plan_name, s.plan_id 
+        // ERROR REMOVED: Ab hum direct join se plans table se limit utha rahe hain
+        $sql = "SELECT p.user_limit, p.plan_name, s.plan_id 
                 FROM subscriptions s 
                 JOIN plans p ON s.plan_id = p.id 
                 WHERE s.tenant_id = ? AND s.status = 'active' LIMIT 1";
@@ -118,25 +133,19 @@ class PlanLogic {
         $stmt->execute();
         $plan_data = $stmt->get_result()->fetch_assoc();
         
-        $plan_id = $plan_data['plan_id'] ?? 1; 
+        // Agar plan data na mile toh default (Trial) values set karein
+        $limit = $plan_data['user_limit'] ?? 5; 
+        $plan_name = $plan_data['plan_name'] ?? 'Free Trial';
+        $plan_id = $plan_data['plan_id'] ?? 1;
 
-        // SMART LIMIT LOGIC: Agar Premium (2) hai toh force 999 karein
-        if ($plan_id == 2) {
-            $limit = 999;
-            $plan_name = "Premium Plan";
-        } else {
-            $limit = $plan_data['default_limit'] ?? 10;
-            $plan_name = $plan_data['plan_name'] ?? 'Basic Plan';
-        }
-
-        // User Count
+        // Current User Count
         $sql_count = "SELECT COUNT(id) as total FROM users WHERE tenant_id = ?";
         $stmt_count = $this->db->prepare($sql_count);
         $stmt_count->bind_param("i", $tenant_id);
         $stmt_count->execute();
         $current_users = $stmt_count->get_result()->fetch_assoc()['total'];
 
-        // Login Count
+        // Total Logins
         $sql_logins = "SELECT COUNT(*) as total_logins FROM audit_logs WHERE tenant_id = ? AND action LIKE '%Login%'";
         $stmt_l = $this->db->prepare($sql_logins);
         $stmt_l->bind_param("i", $tenant_id);
@@ -146,16 +155,16 @@ class PlanLogic {
         $percentage = ($limit > 0) ? ($current_users / $limit) * 100 : 0;
 
         return [
-            'limit' => $limit,
+            'limit' => $limit, // Ab ye Basic par 10 aur Premium par 999 sahi dega
             'current' => $current_users,
             'logins_total' => $total_logins, 
             'plan_id' => $plan_id,
             'plan_name' => $plan_name,
-            'percentage' => round($percentage, 1) // Precise dikhane ke liye decimal rakha hai
+            'percentage' => round($percentage, 1)
         ];
     }
 
-    // Subscription Billing & Expiry Details
+    // 6. Subscription Billing & Expiry Details
     public function get_subscription_details($tenant_id)
     {
         $sql = "SELECT s.id, p.plan_name, s.start_date, s.expiry_date, s.status 
@@ -195,7 +204,7 @@ class PlanLogic {
         return $subscriptions;
     }
 
-    // Recent Activity Logs
+    // 7. Recent Activity Logs
     public function get_recent_activity($tenant_id) {
         $sql = "SELECT action, created_at 
                 FROM audit_logs 
@@ -208,7 +217,7 @@ class PlanLogic {
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
-    // 1. Check if Subscription is Blocked
+    // 8. Check if Subscription is Blocked
     public function is_subscription_blocked($tenant_id) {
         $sql = "SELECT status, expiry_date FROM subscriptions WHERE tenant_id = ? AND status = 'active' LIMIT 1";
         $stmt = $this->db->prepare($sql);
@@ -225,7 +234,7 @@ class PlanLogic {
         return false;
     }
 
-    // 2. Check Feature Access
+    // 9. Check Feature Access
     public function can_access_feature($tenant_id, $feature_name) {
         $sql = "SELECT p.features_json FROM subscriptions s 
                 JOIN plans p ON s.plan_id = p.id 
@@ -241,4 +250,6 @@ class PlanLogic {
         return isset($features[$feature_name]) && $features[$feature_name] === true;
     }
 }
+
+
 ?>

@@ -7,19 +7,19 @@ require_once(__DIR__ . '/plan_logic.php');
 $sub_logic = new Subscription($db);
 $plan_logic = new PlanLogic($db);
 
-// --- LAIBA'S LOGIC START ---
-// 1. Check kar rahy hain ke trial ya subscription expire toh nahi hui
-$is_blocked = $plan_logic->is_subscription_blocked(1); 
+$tenant_id = 1;
 
-// 2. Agar blocked hai (date purani hai), toh system ko yahi rok do
+// 1. Check if blocked (Trial expired or otherwise)
+$is_blocked = $plan_logic->is_subscription_blocked($tenant_id); 
+
 if ($is_blocked) {
     die("
     <div style='height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: sans-serif;'>
         <div style='background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 500px; border-top: 5px solid #ef4444;'>
             <div style='font-size: 50px; margin-bottom: 20px;'>🚫</div>
-            <h2 style='color: #1e293b; margin-bottom: 15px;'>SYSTEM BLOCKED: TRIAL EXPIRED</h2>
+            <h2 style='color: #1e293b; margin-bottom: 15px;'>SYSTEM BLOCKED</h2>
             <p style='color: #64748b; margin-bottom: 25px;'>Aapka plan khatam ho chuka hai. Agay barhne ke liye apna plan upgrade karein.</p>
-            <a href='upgrade_process.php' style='display: inline-block; background: #1f3b57; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Upgrade to Premium</a>
+            <a href='checkout.php' style='display: inline-block; background: #1f3b57; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Upgrade to Premium</a>
             <div style='margin-top: 20px;'>
                 <a href='../../index.php' style='color: #94a3b8; text-decoration: none; font-size: 14px;'>Back to Home</a>
             </div>
@@ -27,14 +27,16 @@ if ($is_blocked) {
     </div>
     ");
 }
-// --- LAIBA'S LOGIC END ---
 
-$my_sub = $sub_logic->get_active_subscription(1);
-
-// Agar blocked nahi hai toh check karein active hai ya nahi
+$my_sub = $sub_logic->get_active_subscription($tenant_id);
 $is_active = $sub_logic->is_valid($my_sub);
+$usage = $plan_logic->get_user_usage($tenant_id); 
 
-$usage = $plan_logic->get_user_usage(1); 
+// --- NAYA LOGIC: Plan Name properly handle karein ---
+$current_plan_name = "N/A";
+if($usage['plan_id'] == 1) $current_plan_name = "Free Trial";
+elseif($usage['plan_id'] == 2) $current_plan_name = "Basic Plan";
+elseif($usage['plan_id'] == 3) $current_plan_name = "Premium Plan";
 ?>
 
 <!DOCTYPE html>
@@ -64,7 +66,7 @@ $usage = $plan_logic->get_user_usage(1);
             <div class="info-grid">
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-crown"></i> CURRENT PLAN</span>
-                    <h3 class="box-value"><?php echo ($usage['plan_id'] == 2) ? "Premium Plan" : "Basic Plan"; ?></h3>
+                    <h3 class="box-value"><?php echo $current_plan_name; ?></h3>
                 </div>
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-calendar-alt"></i> EXPIRY DATE</span>
@@ -96,18 +98,9 @@ $usage = $plan_logic->get_user_usage(1);
                 </div>
             </div>
 
-            <div class="features-section" style="margin-top: 25px;">
-                <h4 style="margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Included in your plan:</h4>
-                <ul class="feature-list" style="list-style: none; padding: 0;">
-                    <li style="margin-bottom: 8px; color: #475569;"><span style="color: #22c55e; margin-right: 10px;">✓</span> Automation workflows enabled</li>
-                    <li style="margin-bottom: 8px; color: #475569;"><span style="color: #22c55e; margin-right: 10px;">✓</span> Advanced analytics dashboard</li>
-                    <li style="margin-bottom: 8px; color: #475569;"><span style="color: #22c55e; margin-right: 10px;">✓</span> Enterprise-grade security</li>
-                </ul>
-            </div>
-
             <div class="action-area" style="margin-top: 30px; text-align: center;">
-                <?php if($usage['plan_id'] != 2): ?>
-                    <a href="upgrade_process.php" class="btn-manage" style="display: block; width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; text-decoration: none; box-sizing: border-box; transition: 0.3s; cursor: pointer;">
+                <?php if($usage['plan_id'] != 3): ?>
+                    <a href="checkout.php" class="btn-manage" style="display: block; width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; text-decoration: none; box-sizing: border-box; transition: 0.3s; cursor: pointer;">
                         <i class="fas fa-arrow-up"></i> Upgrade to Premium Plan
                     </a>
                 <?php else: ?>

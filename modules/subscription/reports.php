@@ -18,7 +18,6 @@ $recent_activities = $plan_logic->get_recent_activity($tid);
 
 $plan_logic->sync_notifications($tid);
 
-// UPDATE: Sirf wahi notifications fetch hongi jo is_read = 0 hain
 $sql_notif = "SELECT * FROM notifications WHERE tenant_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 5";
 $stmt_n = $db->prepare($sql_notif);
 $stmt_n->bind_param("i", $tid);
@@ -60,8 +59,6 @@ $revenue = $plan_logic->get_total_revenue($tid);
         .btn-download:hover { background: #e67e32; transform: translateY(-2px); }
         .btn-locked { background: #94a3b8; cursor: not-allowed; }
         .controls-wrapper { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
-        /* Dismiss Button Style */
         .dismiss-btn { background: none; border: none; color: #856404; cursor: pointer; font-size: 18px; opacity: 0.5; transition: 0.3s; }
         .dismiss-btn:hover { opacity: 1; color: #000; }
     </style>
@@ -71,26 +68,27 @@ $revenue = $plan_logic->get_total_revenue($tid);
 
 <div class="main-wrapper"> 
     <div class="reports-container">
+        
         <div class="report-header" style="margin-bottom: 25px; text-align: center;">
             <h1><i class="fas fa-chart-pie"></i> Business Insights Dashboard</h1>
             <p>Your system's real-time performance overview</p>
         </div>
 
         <div class="notification-alerts" style="margin-bottom: 20px;">
-        <?php foreach($notifications as $notif): ?>
-            <div id="notif-<?php echo $notif['id']; ?>" style="background: #fff3cd; border-left: 5px solid #ffca2c; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                <div>
-                    <strong style="color: #856404; display: block; font-size: 14px;"><?php echo $notif['title']; ?></strong>
-                    <span style="font-size: 13px; color: #666;"><?php echo $notif['message']; ?></span>
+            <?php foreach($notifications as $notif): ?>
+                <div id="notif-<?php echo $notif['id']; ?>" style="background: #fff3cd; border-left: 5px solid #ffca2c; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div>
+                        <strong style="color: #856404; display: block; font-size: 14px;"><?php echo $notif['title']; ?></strong>
+                        <span style="font-size: 13px; color: #666;"><?php echo $notif['message']; ?></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <small style="color: #999; font-size: 11px;"><?php echo date('d M', strtotime($notif['created_at'])); ?></small>
+                        <button class="dismiss-btn" onclick="dismissNotif(<?php echo $notif['id']; ?>)" title="Dismiss">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <small style="color: #999; font-size: 11px;"><?php echo date('d M', strtotime($notif['created_at'])); ?></small>
-                    <button class="dismiss-btn" onclick="dismissNotif(<?php echo $notif['id']; ?>)" title="Dismiss">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
-                </div>
-            </div>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
         </div>
 
         <div class="controls-wrapper" id="no-export">
@@ -103,15 +101,10 @@ $revenue = $plan_logic->get_total_revenue($tid);
                     <option value="year" <?php echo ($filter == 'year') ? 'selected' : ''; ?>>Full Year</option>
                 </select>
             </div>
-
             <?php if($can_download_pdf): ?>
-                <button onclick="downloadPDF()" class="btn-download">
-                    <i class="fas fa-file-pdf"></i> Download PDF Report
-                </button>
+                <button onclick="downloadPDF()" class="btn-download"><i class="fas fa-file-pdf"></i> Download PDF Report</button>
             <?php else: ?>
-                <button class="btn-download btn-locked" onclick="alert('Please upgrade to Premium to download PDF reports')">
-                    <i class="fas fa-lock"></i> PDF Locked (Premium Only)
-                </button>
+                <button class="btn-download btn-locked" onclick="alert('Please upgrade to Premium to download PDF reports')"><i class="fas fa-lock"></i> PDF Locked (Premium Only)</button>
             <?php endif; ?>
         </div>
 
@@ -153,9 +146,7 @@ $revenue = $plan_logic->get_total_revenue($tid);
             <div class="report-card">
                 <div class="card-title"><i class="fas fa-file-invoice-dollar" style="color: #ff8c42;"></i> Subscription Billing Details</div>
                 <table class="custom-table">
-                    <thead>
-                        <tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr>
-                    </thead>
+                    <thead><tr><th>Plan Name</th><th>Start Date</th><th>Expiry Date</th><th>Days Left</th><th>Status</th></tr></thead>
                     <tbody>
                         <?php foreach($billing_details as $bill): ?>
                         <tr>
@@ -174,11 +165,7 @@ $revenue = $plan_logic->get_total_revenue($tid);
                 <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
                 <?php foreach($top_users as $user): ?>
                     <div class="user-row">
-                        <span>
-                            <a href="user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;">
-                                <i class="fas fa-user-circle"></i> <?php echo $user['username']; ?>
-                            </a>
-                        </span>
+                        <span><a href="user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;"><i class="fas fa-user-circle"></i> <?php echo $user['username']; ?></a></span>
                         <span class="badge-count"><?php echo $user['activity_count']; ?> Logins</span>
                     </div>
                 <?php endforeach; ?>
@@ -209,7 +196,6 @@ $revenue = $plan_logic->get_total_revenue($tid);
 </div> 
 
 <script>
-    // New Function for Dismissing Notifications
     function dismissNotif(id) {
         fetch('mark_read.php', {
             method: 'POST',
@@ -218,7 +204,7 @@ $revenue = $plan_logic->get_total_revenue($tid);
         })
         .then(response => response.text())
         .then(data => {
-            if(data === 'success') {
+            if(data.trim() === 'success') {
                 const element = document.getElementById('notif-' + id);
                 element.style.transition = "0.5s";
                 element.style.opacity = "0";
@@ -238,40 +224,19 @@ $revenue = $plan_logic->get_total_revenue($tid);
 
     new Chart(document.getElementById('regChart'), {
         type: 'line',
-        data: {
-            labels: ms,
-            datasets: [{
-                label: 'Users',
-                data: mapData(<?php echo json_encode($reg_data['labels'] ?? []); ?>, <?php echo json_encode($reg_data['data'] ?? []); ?>),
-                borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4
-            }]
-        },
+        data: { labels: ms, datasets: [{ label: 'Users', data: mapData(<?php echo json_encode($reg_data['labels'] ?? []); ?>, <?php echo json_encode($reg_data['data'] ?? []); ?>), borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4 }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
     new Chart(document.getElementById('salesChart'), {
         type: 'bar',
-        data: {
-            labels: ms,
-            datasets: [{
-                label: 'Sales',
-                data: mapData(<?php echo json_encode($sales_data['labels'] ?? []); ?>, <?php echo json_encode($sales_data['data'] ?? []); ?>),
-                backgroundColor: '#22c55e', borderRadius: 5
-            }]
-        },
+        data: { labels: ms, datasets: [{ label: 'Sales', data: mapData(<?php echo json_encode($sales_data['labels'] ?? []); ?>, <?php echo json_encode($sales_data['data'] ?? []); ?>), backgroundColor: '#22c55e', borderRadius: 5 }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
     new Chart(document.getElementById('usageChart'), {
         type: 'bar',
-        data: {
-            labels: ms,
-            datasets: [{
-                label: 'Logins',
-                data: mapData(<?php echo json_encode($monthly_data['labels'] ?? []); ?>, <?php echo json_encode($monthly_data['data'] ?? []); ?>),
-                backgroundColor: '#1f3b57', borderRadius: 8
-            }]
-        },
+        data: { labels: ms, datasets: [{ label: 'Logins', data: mapData(<?php echo json_encode($monthly_data['labels'] ?? []); ?>, <?php echo json_encode($monthly_data['data'] ?? []); ?>), backgroundColor: '#1f3b57', borderRadius: 8 }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
@@ -279,21 +244,12 @@ $revenue = $plan_logic->get_total_revenue($tid);
         const element = document.querySelector('.report-content'); 
         const noExport = document.getElementById('no-export');
         noExport.style.display = 'none';
-        const opt = {
-            margin: 10,
-            filename: 'Business_Analytics_Report.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(element).save().then(() => {
-            noExport.style.display = 'flex';
-        });
+        const opt = { margin: 10, filename: 'Report.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(element).save().then(() => { noExport.style.display = 'flex'; });
     }
 
     function updateDashboard() {
-        const timeframe = document.getElementById('timeframe').value;
-        window.location.href = "reports.php?filter=" + timeframe;
+        window.location.href = "reports.php?filter=" + document.getElementById('timeframe').value;
     }
 </script>
 </body>

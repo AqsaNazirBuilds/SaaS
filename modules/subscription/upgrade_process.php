@@ -1,6 +1,7 @@
 <?php
 // modules/subscription/upgrade_process.php
 require_once(__DIR__ . '/../../config/db.php');
+require_once(__DIR__ . '/plan_logic.php'); // Step 1: Logic file include ki
 
 if (isset($_POST['payment_confirmed']) && $_POST['payment_confirmed'] == 'true') {
     
@@ -8,6 +9,9 @@ if (isset($_POST['payment_confirmed']) && $_POST['payment_confirmed'] == 'true')
     $target_plan_id = $_POST['plan_id']; // ID 2 (Basic) ya 3 (Premium)
     $amount = $_POST['amount']; // Price $50 ya $150
     $new_expiry = date('Y-m-d', strtotime('+30 days'));
+
+    // Plan ka naam nikalne ke liye chota sa logic
+    $plan_name = ($target_plan_id == 3) ? 'Premium' : 'Basic';
 
     // STEP 1: Payment table mein entry
     $pay_query = "INSERT INTO payments (tenant_id, amount, payment_status) VALUES ($tenant_id, $amount, 'success')";
@@ -21,7 +25,14 @@ if (isset($_POST['payment_confirmed']) && $_POST['payment_confirmed'] == 'true')
                           WHERE tenant_id = $tenant_id";
 
         if ($db->query($upgrade_query)) {
-            // Success! Seedha reports par bhejein taake revenue dikhe
+            
+            // --- NAYA KAAM START ---
+            // STEP 3: Notification Table mein entry karein
+            $plan_logic = new PlanLogic($db);
+            $plan_logic->add_payment_notification($tenant_id, $amount, $plan_name);
+            // --- NAYA KAAM END ---
+
+            // Success! Seedha reports par bhejein
             header("Location: reports.php"); 
             exit();
         } else {

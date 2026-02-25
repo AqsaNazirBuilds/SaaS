@@ -270,7 +270,7 @@ public function sync_notifications($tenant_id) {
     } elseif ($days <= 3) {
         $title = "Urgent: Plan Expiring";
         $msg = "your plan is expired in some days.";
-    } elseif ($days <= 50) {
+    } elseif ($days <= 7) {
         $title = "Subscription Update";
         $msg = "your plan is expired in some days.";
     }
@@ -302,7 +302,22 @@ public function get_notifications($tenant_id) {
     return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
-}
+// ... purane functions yahan khatam ho rahe hain ...
+
+    // Naya function yahan add karein
+    public function add_payment_notification($tid, $amount, $plan_name) {
+        $title = "Payment Successful ✅";
+        $msg = "Hamein aapki $$amount ki payment mil gayi hai. Aapka $plan_name plan activate ho chuka hai.";
+        
+        $sql = "INSERT INTO notifications (tenant_id, title, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())";
+        $stmt = $this->db->prepare($sql); // Yahan check karein aapka variable $this->db hai ya $this->conn
+        $stmt->bind_param("iss", $tid, $title, $msg);
+        $stmt->execute();
+    }
+
+} // Ye class ki aakhri bracket hai, isse upar hi dalkar save karein.
+
+
 
 
 ?>

@@ -1,4 +1,7 @@
-<?php include('check_access.php'); ?>
+<?php 
+// Fixed include path because file is in subscription folder
+include(__DIR__ . '/check_access.php'); 
+?>
 <?php
 require_once(__DIR__ . '/../../config/db.php');
 require_once(__DIR__ . '/plan_logic.php');
@@ -34,37 +37,15 @@ $revenue = $plan_logic->get_total_revenue($tid);
     <meta charset="UTF-8">
     <title>Advanced Analytics | Reports</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/laiba/reports.css?v=<?php echo time(); ?>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; margin: 0; padding: 0; color: #1f3b57; }
-        .reports-container { max-width: 1100px; margin: auto; position: relative; }
-        .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 2px solid #1f3b57; text-align: center; grid-column: span 2; }
-        .stat-box.bottom-card { grid-column: span 3; }
-        .stat-label { color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; display: block; }
-        .stat-value { color: #1f3b57; font-size: 24px; font-weight: bold; margin-top: 10px; display: block; }
-        .report-card { background: #ffffff !important; padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); margin-bottom: 30px; border: 1px solid #e2e8f0; }
-        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .custom-table { width: 100%; border-collapse: collapse; }
-        .custom-table th { text-align: left; padding: 15px; background: #1f3b57; color: white; font-size: 13px; }
-        .custom-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .badge-count { background: #1f3b57; color: white; padding: 5px 12px; border-radius: 6px; font-size: 12px; }
-        .status-pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; color: white; font-weight: 600; }
-        .badge-status { background: #ff8c42; color: white; padding: 4px 10px; border-radius: 50px; font-size: 11px; }
-        .charts-double { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .blurred { filter: blur(5px); pointer-events: none; user-select: none; }
-        .btn-download { background: #ff8c42; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s ease; }
-        .btn-download:hover { background: #e67e32; transform: translateY(-2px); }
-        .btn-locked { background: #94a3b8; cursor: not-allowed; }
-        .controls-wrapper { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .dismiss-btn { background: none; border: none; color: #856404; cursor: pointer; font-size: 18px; opacity: 0.5; transition: 0.3s; }
-        .dismiss-btn:hover { opacity: 1; color: #000; }
-    </style>
 </head>
 <body>
-<?php include('sidebar.php'); ?>
+<?php 
+// FIX: Path corrected to same folder
+include(__DIR__ . '/sidebar.php'); 
+?>
 
 <div class="main-wrapper"> 
     <div class="reports-container">
@@ -165,7 +146,7 @@ $revenue = $plan_logic->get_total_revenue($tid);
                 <div class="card-title"><i class="fas fa-crown" style="color: #ff8c42;"></i> Top Active Users</div>
                 <?php foreach($top_users as $user): ?>
                     <div class="user-row">
-                        <span><a href="user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;"><i class="fas fa-user-circle"></i> <?php echo $user['username']; ?></a></span>
+                        <span><a href="<?php echo BASE_URL; ?>modules/subscription/user_details.php?id=<?php echo $user['user_id']; ?>" style="text-decoration: none; color: #1f3b57; font-weight: bold;"><i class="fas fa-user-circle"></i> <?php echo $user['username']; ?></a></span>
                         <span class="badge-count"><?php echo $user['activity_count']; ?> Logins</span>
                     </div>
                 <?php endforeach; ?>
@@ -197,7 +178,7 @@ $revenue = $plan_logic->get_total_revenue($tid);
 
 <script>
     function dismissNotif(id) {
-        fetch('mark_read.php', {
+        fetch('<?php echo BASE_URL; ?>modules/notifications/mark_read.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'id=' + id
@@ -249,7 +230,8 @@ $revenue = $plan_logic->get_total_revenue($tid);
     }
 
     function updateDashboard() {
-        window.location.href = "reports.php?filter=" + document.getElementById('timeframe').value;
+        // FIX: Redirect path ensured for subscription folder
+        window.location.href = "<?php echo BASE_URL; ?>modules/subscription/reports.php?filter=" + document.getElementById('timeframe').value;
     }
 </script>
 </body>

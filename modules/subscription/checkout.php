@@ -42,15 +42,15 @@ $plans_result = $db->query($plans_query);
                     <li><i class="fas fa-check" style="color: #22c55e;"></i> Cycle: <?php echo $plan['billing_cycle']; ?></li>
                 </ul>
 
-                <form action="./upgrade_process.php" method="POST">
-    <input type="hidden" name="payment_confirmed" value="true">
-    <input type="hidden" name="plan_id" value="<?php echo $plan['id']; ?>">
-    <input type="hidden" name="amount" value="<?php echo $plan['price']; ?>">
-    
-    <button type="submit" class="btn-pay">
-        Activate <?php echo $plan['plan_name']; ?>
-    </button>
-</form>
+                <form action="<?php echo BASE_URL; ?>modules/subscription/upgrade_process.php" method="POST">
+                    <input type="hidden" name="payment_confirmed" value="true">
+                    <input type="hidden" name="plan_id" value="<?php echo $plan['id']; ?>">
+                    <input type="hidden" name="amount" value="<?php echo $plan['price']; ?>">
+                    
+                    <button type="submit" class="btn-pay">
+                        Activate <?php echo $plan['plan_name']; ?>
+                    </button>
+                </form>
             </div>
         <?php endwhile; ?>
     </div>

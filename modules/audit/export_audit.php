@@ -2,10 +2,20 @@
 // modules/audit/export_audit.php
 require_once(__DIR__ . '/../../config/db.php');
 
+// Security Check: Pehle check karein ke session start hai aur user login hai
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// PREMIUM RESTRICTION: Agar plan Premium nahi hai toh download block kar dein
+if (!isset($_SESSION['plan_name']) || $_SESSION['plan_name'] !== 'Premium') {
+    die("Unauthorized Access: Export feature is only available for Premium Plan users.");
+}
+
 // 1. Kisi bhi kism ki purani output ya space ko khatam karna
 if (ob_get_length()) ob_end_clean();
 
-// 2. Database se data nikalna (Columns aapke T.jpg ke mutabiq hain)
+// 2. Database se data nikalna
 $query = "SELECT id, user_id, action, module, created_at FROM audit_logs ORDER BY created_at DESC";
 $result = $db->query($query);
 

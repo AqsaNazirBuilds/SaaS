@@ -1,4 +1,5 @@
 <?php
+// modules/users/user_details.php
 require_once(__DIR__ . '/../../config/db.php');
 
 $user_id = isset($_GET['id']) ? $_GET['id'] : null;
@@ -28,16 +29,18 @@ $logs = $stmt_log->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Activity Profile | Analytics</title>
-    <link rel="stylesheet" href="../../css/laiba/user_details.css"> 
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/laiba/user_details.css"> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* FIXED: Body margin aur padding 0 kiya taake sidebar ki CSS ise override na kare */
         body { margin: 0; padding: 0; background: #f1f5f9; }
     </style>
 </head>
 <body>
 
-<?php include('sidebar.php'); ?>
+<?php 
+// Including sidebar from subscription folder
+include(__DIR__ . '/../subscription/sidebar.php'); 
+?>
 
 <div class="main-wrapper">
 
@@ -52,8 +55,8 @@ $logs = $stmt_log->get_result();
                     </div>
                     
                     <div class="profile-header-info">
-                        <h2 class="user-display-name"><?php echo $user_info['name']; ?></h2>
-                        <p class="user-display-role">System Administrator</p>
+                        <h2 class="user-display-name"><?php echo $user_info['name'] ?? 'Unknown User'; ?></h2>
+                        <p class="user-display-role">System User</p>
                     </div>
                     
                     <hr class="divider">
@@ -61,7 +64,7 @@ $logs = $stmt_log->get_result();
                     <div class="info-details-box">
                         <div class="info-group">
                             <label><i class="fas fa-envelope-open-text"></i> EMAIL ADDRESS</label>
-                            <p class="highlight-text"><?php echo $user_info['email']; ?></p>
+                            <p class="highlight-text"><?php echo $user_info['email'] ?? 'No email found'; ?></p>
                         </div>
                         
                         <div class="info-group">
@@ -115,9 +118,11 @@ $logs = $stmt_log->get_result();
         </div>
 
         <div class="footer-actions">
-            <a href="reports.php" class="back-btn">
+            <a href="<?php echo BASE_URL; ?>modules/subscription/reports.php" class="back-btn">
                 <i class="fas fa-arrow-left"></i> BACK TO DASHBOARD
             </a>
         </div>
-    </div> </div> </body>
+    </div> 
+</div> 
+</body>
 </html>

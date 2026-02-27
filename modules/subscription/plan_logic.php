@@ -316,8 +316,4 @@ public function get_notifications($tenant_id) {
     }
 
 } // Ye class ki aakhri bracket hai, isse upar hi dalkar save karein.
-
-
-
-
 ?>

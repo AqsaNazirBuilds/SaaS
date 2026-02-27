@@ -1,4 +1,4 @@
-<?php include('../subscription/check_access.php'); ?>
+<?php include(__DIR__ . '/../subscription/check_access.php'); ?>
 <?php
 // modules/audit/audit_view.php
 require_once(__DIR__ . '/../../config/db.php');
@@ -10,19 +10,20 @@ $audit_obj = new AuditLog($db);
 $search = $_GET['search'] ?? '';
 $module = $_GET['module'] ?? '';
 
-// Database columns check: action, module (as seen in your T.jpg)
+// Database columns check: action, module
 $query = "SELECT * FROM audit_logs WHERE 1=1";
 if ($search) {
-    // Fixed: Using 'action' instead of 'action_performed'
     $query .= " AND action LIKE '%$search%'";
 }
 if ($module) {
-    // Fixed: Using 'module' instead of 'module_name'
     $query .= " AND module = '$module'";
 }
 $query .= " ORDER BY created_at DESC";
 
 $logs = $db->query($query);
+
+// Plan check for Export Feature
+$current_plan = $_SESSION['plan_name'] ?? 'Basic'; 
 ?>
 
 <!DOCTYPE html>
@@ -31,7 +32,7 @@ $logs = $db->query($query);
     <meta charset="UTF-8">
     <title>Audit Logs | Saas Project</title>
     
-    <link rel="stylesheet" href="../../css/laiba/audit_view.css?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/laiba/audit_view.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -49,7 +50,7 @@ $logs = $db->query($query);
         </div>
 
         <div class="filter-bar">
-            <form method="GET" class="filter-form">
+            <form method="GET" action="<?php echo BASE_URL; ?>modules/audit/audit_view.php" class="filter-form">
                 <div class="search-input-group">
                     <i class="fas fa-search"></i>
                     <input type="text" name="search" class="search-field" placeholder="Search logs..." value="<?php echo htmlspecialchars($search); ?>">
@@ -63,10 +64,17 @@ $logs = $db->query($query);
                 </select>
                   
                 <button type="submit" class="btn-filter">Filter</button>
-                <a href="export_audit.php" class="btn-download" style="background: #22c55e; color: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-file-excel"></i> Export
-                </a>
-            </form>
+                
+                <?php if($current_plan === 'Premium'): ?>
+                    <a href="<?php echo BASE_URL; ?>modules/audit/export_audit.php" class="btn-download" style="background: #22c55e; color: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-excel"></i> Export
+                    </a>
+                <?php else: ?>
+                    <button type="button" class="btn-download" onclick="alert('Export feature is only for Premium Users!')" style="background: #94a3b8; color: white; padding: 10px 15px; border-radius: 6px; border:none; cursor: not-allowed; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-lock"></i> Export (Premium)
+                    </button>
+                <?php endif; ?>
+                </form>
         </div>
 
         <div class="table-container">

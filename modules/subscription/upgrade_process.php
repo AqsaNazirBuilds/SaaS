@@ -1,16 +1,16 @@
 <?php
 // modules/subscription/upgrade_process.php
 require_once(__DIR__ . '/../../config/db.php');
-require_once(__DIR__ . '/plan_logic.php'); // Step 1: Logic file include ki
+require_once(__DIR__ . '/plan_logic.php'); 
 
 if (isset($_POST['payment_confirmed']) && $_POST['payment_confirmed'] == 'true') {
     
-    $tenant_id = 1; 
-    $target_plan_id = $_POST['plan_id']; // ID 2 (Basic) ya 3 (Premium)
-    $amount = $_POST['amount']; // Price $50 ya $150
+    // Session se tenant_id lein (Best practice)
+    $tenant_id = $_SESSION['tenant_id'] ?? 1; 
+    $target_plan_id = $_POST['plan_id']; 
+    $amount = $_POST['amount']; 
     $new_expiry = date('Y-m-d', strtotime('+30 days'));
 
-    // Plan ka naam nikalne ke liye chota sa logic
     $plan_name = ($target_plan_id == 3) ? 'Premium' : 'Basic';
 
     // STEP 1: Payment table mein entry
@@ -26,22 +26,22 @@ if (isset($_POST['payment_confirmed']) && $_POST['payment_confirmed'] == 'true')
 
         if ($db->query($upgrade_query)) {
             
-            // --- NAYA KAAM START ---
-            // STEP 3: Notification Table mein entry karein
+            // STEP 3: Notification Table mein entry
             $plan_logic = new PlanLogic($db);
             $plan_logic->add_payment_notification($tenant_id, $amount, $plan_name);
-            // --- NAYA KAAM END ---
 
-            // Success! Seedha reports par bhejein
-            header("Location: reports.php"); 
+            // SUCCESS: BASE_URL use karte hue reports page par bhejein
+            header("Location: " . BASE_URL . "modules/subscription/reports.php?status=success"); 
             exit();
         } else {
-            die("Subscription Update Failed: " . $db->error);
+            die("Subscription Update Failed. <a href='" . BASE_URL . "modules/subscription/checkout.php'>Try Again</a>");
         }
     } else {
-        die("Payment Record Failed: " . $db->error);
+        die("Payment Record Failed. <a href='" . BASE_URL . "modules/subscription/checkout.php'>Try Again</a>");
     }
 } else {
-    die("Ghalat rasta! Checkout se aein.");
+    // Agar koi direct access kare to wapis checkout par bhej dein
+    header("Location: " . BASE_URL . "modules/subscription/checkout.php");
+    exit();
 }
 ?>

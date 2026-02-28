@@ -10,6 +10,14 @@ class Subscription {
     }
 
     /**
+     * NEW Helper: Get Upgrade URL
+     * Taake pure project mein kahin bhi upgrade link chahiye ho to yahi se mil jaye
+     */
+    public function get_upgrade_url() {
+        return BASE_URL . "modules/subscription/checkout.php";
+    }
+
+    /**
      * Active Subscription Fetch Logic
      */
     public function get_active_subscription($tenant_id) {
@@ -17,7 +25,7 @@ class Subscription {
                 FROM subscriptions s 
                 JOIN plans p ON s.plan_id = p.id 
                 WHERE s.tenant_id = ? AND s.status = 'active' 
-                LIMIT 1";
+                ORDER BY s.id DESC LIMIT 1"; // Added order to get latest
         
         $stmt = $this->db->prepare($sql);
         $stmt->bind_param("i", $tenant_id);
@@ -40,8 +48,7 @@ class Subscription {
     }
 
     /**
-     * NEW: Feature Permission Logic (Phase 3)
-     * Check karta hai ke kya 'audit_logs' ya 'reports' plan mein enabled hain?
+     * Feature Permission Logic (Phase 3)
      */
     public function has_feature($tenant_id, $feature_key) {
         $sub = $this->get_active_subscription($tenant_id);
@@ -52,14 +59,13 @@ class Subscription {
     }
 
     /**
-     * NEW: Plan Limit Checker (Phase 2)
-     * Aqsa jab User banayegi toh ye function use karegi
+     * Plan Limit Checker (Phase 2)
      */
     public function check_limit($tenant_id) {
         $sub = $this->get_active_subscription($tenant_id);
         if (!$sub) return ['can_add' => false, 'message' => 'No active plan'];
 
-        // Mojooda users count karna
+        // Current users count
         $sql_count = "SELECT COUNT(id) as total FROM users WHERE tenant_id = ?";
         $stmt_count = $this->db->prepare($sql_count);
         $stmt_count->bind_param("i", $tenant_id);
@@ -72,7 +78,8 @@ class Subscription {
             'can_add' => ($limit == 999 || $current_users < $limit),
             'current' => $current_users,
             'limit' => $limit,
-            'percentage' => ($limit > 0 && $limit != 999) ? round(($current_users / $limit) * 100) : 0
+            'percentage' => ($limit > 0 && $limit != 999) ? round(($current_users / $limit) * 100) : 0,
+            'upgrade_link' => $this->get_upgrade_url() // BASE_URL integrated here
         ];
     }
 }

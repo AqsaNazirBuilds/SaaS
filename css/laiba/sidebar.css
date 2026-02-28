@@ -1,0 +1,111 @@
+/* Sidebar Main Style */
+.sidebar {
+    width: 260px; /* Thori width barha di hai readability ke liye */
+    height: 100vh;
+    background-color:  #64748b; /* Navy Blue/Slate Gray Professional Look */
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+}
+
+/* Header with Rocket Icon */
+.sidebar-header {
+    padding: 30px 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.logo-icon {
+    background: orange; 
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    color: white;
+}
+
+.logo-text {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Navigation Links */
+.nav-links {
+    list-style: none;
+    padding: 25px 15px;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.nav-item { margin-bottom: 10px; }
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #cbd5e1;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255, 140, 66, 0.1);
+    color: white;
+    transform: translateX(5px);
+}
+
+/* User Profile Footer */
+.sidebar-footer {
+    padding: 20px;
+    background: #0f172a; /* Slightly darker than sidebar */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Avatar styling taake generic icon saaf nazar aaye */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-info { display: flex; flex-direction: column; }
+
+.user-name {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.user-role {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+/* Page content adjustment */
+.main-wrapper {
+    margin-left: 260px; 
+    padding: 30px;
+    width: calc(100% - 260px);
+    box-sizing: border-box;
+    min-height: 100vh;
+    background: #f8fafc;
+}

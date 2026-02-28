@@ -7,9 +7,36 @@ require_once(__DIR__ . '/plan_logic.php');
 $sub_logic = new Subscription($db);
 $plan_logic = new PlanLogic($db);
 
-$my_sub = $sub_logic->get_active_subscription(1);
+$tenant_id = $_SESSION['tenant_id'] ?? 1;
+
+// 1. Check if blocked
+$is_blocked = $plan_logic->is_subscription_blocked($tenant_id); 
+
+if ($is_blocked) {
+    // Blocked screen with dynamic BASE_URL
+    die("
+    <div style='height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: sans-serif;'>
+        <div style='background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 500px; border-top: 5px solid #ef4444;'>
+            <div style='font-size: 50px; margin-bottom: 20px;'>🚫</div>
+            <h2 style='color: #1e293b; margin-bottom: 15px;'>SYSTEM BLOCKED</h2>
+            <p style='color: #64748b; margin-bottom: 25px;'>Aapka plan khatam ho chuka hai. Agay barhne ke liye apna plan upgrade karein.</p>
+            <a href='" . BASE_URL . "modules/subscription/checkout.php' style='display: inline-block; background: #1f3b57; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;'>Upgrade to Premium</a>
+            <div style='margin-top: 20px;'>
+                <a href='" . BASE_URL . "index.php' style='color: #94a3b8; text-decoration: none; font-size: 14px;'>Back to Home</a>
+            </div>
+        </div>
+    </div>
+    ");
+}
+
+$my_sub = $sub_logic->get_active_subscription($tenant_id);
 $is_active = $sub_logic->is_valid($my_sub);
-$usage = $plan_logic->get_user_usage(1); 
+$usage = $plan_logic->get_user_usage($tenant_id); 
+
+$current_plan_name = "N/A";
+if($usage['plan_id'] == 1) $current_plan_name = "Free Trial";
+elseif($usage['plan_id'] == 2) $current_plan_name = "Basic Plan";
+elseif($usage['plan_id'] == 3) $current_plan_name = "Premium Plan";
 ?>
 
 <!DOCTYPE html>
@@ -17,12 +44,12 @@ $usage = $plan_logic->get_user_usage(1);
 <head>
     <meta charset="UTF-8">
     <title>Subscription Dashboard</title>
-    <link rel="stylesheet" href="../../css/laiba/status.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/laiba/status.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
+<?php include(__DIR__ . '/sidebar.php'); ?>
 <div class="main-wrapper">
     <div class="status-card">
         <div class="card-header">
@@ -39,11 +66,11 @@ $usage = $plan_logic->get_user_usage(1);
             <div class="info-grid">
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-crown"></i> CURRENT PLAN</span>
-                    <h3 class="box-value"><?php echo $usage['plan_name']; ?></h3>
+                    <h3 class="box-value"><?php echo $current_plan_name; ?></h3>
                 </div>
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-calendar-alt"></i> EXPIRY DATE</span>
-                    <h3 class="box-value"><?php echo $my_sub['expiry_date'] ?? '2026-03-01'; ?></h3>
+                    <h3 class="box-value"><?php echo $my_sub['expiry_date'] ?? 'N/A'; ?></h3>
                 </div>
                 <div class="info-box">
                     <span class="box-label"><i class="fas fa-users"></i> USER LIMIT</span>
@@ -71,21 +98,21 @@ $usage = $plan_logic->get_user_usage(1);
                 </div>
             </div>
 
-            <div class="features-section" style="margin-top: 25px;">
-                <h4 style="margin-bottom: 15px;"><i class="fas fa-check-circle"></i> Included in your plan:</h4>
-                <ul class="feature-list" style="list-style: none; padding: 0;">
-                    <li style="margin-bottom: 8px; color: #475569;"><span style="color: #22c55e; margin-right: 10px;">✓</span> Automation workflows enabled</li>
-                    <li style="margin-bottom: 8px; color: #475569;"><span style="color: #22c55e; margin-right: 10px;">✓</span> Advanced analytics dashboard</li>
-                    <li style="margin-bottom: 8px; color: #475569;"><span style="color: #22c55e; margin-right: 10px;">✓</span> Enterprise-grade security</li>
-                </ul>
-            </div>
-
             <div class="action-area" style="margin-top: 30px; text-align: center;">
-                <button class="btn-manage" style="width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                    <i class="fas fa-arrow-up"></i> Upgrade Subscription
-                </button>
+                <?php if($usage['plan_id'] != 3): ?>
+                    <a href="<?php echo BASE_URL; ?>modules/subscription/checkout.php" class="btn-manage" style="display: block; width: 100%; padding: 14px; background: #1f3b57; color: white; border: none; border-radius: 8px; font-weight: 700; text-decoration: none; box-sizing: border-box; transition: 0.3s; cursor: pointer;">
+                        <i class="fas fa-arrow-up"></i> Upgrade to Premium Plan
+                    </a>
+                <?php else: ?>
+                    <div style="padding: 14px; background: #22c55e; color: white; border-radius: 8px; font-weight: 700;">
+                        <i class="fas fa-check-double"></i> You are on Premium Plan
+                    </div>
+                <?php endif; ?>
+                
                 <div style="margin-top: 15px;">
-                    <a href="../../index.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">Back to Dashboard</a>
+                    <a href="<?php echo BASE_URL; ?>modules/subscription/reports.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+                        <i class="fas fa-chevron-left"></i> Back to Dashboard
+                    </a>
                 </div>
             </div>
 

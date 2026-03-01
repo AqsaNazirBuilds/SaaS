@@ -20,9 +20,7 @@ if ($host_name === 'localhost') {
 
 
 
-    // IMPORTANT: yahan folder name soos_project hai
-
-    define('BASE_URL', 'http://localhost/SAAS_PROJECT/');
+    define('BASE_URL', 'http://localhost/saas-hub/');
 
 
 

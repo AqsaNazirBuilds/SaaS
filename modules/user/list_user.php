@@ -181,6 +181,7 @@ $users = $stmt_users->get_result();
             <a href="list_user.php" class="active">Manage Users</a>
             <a href="../subscription/status.php">Subscription Status</a>
             <a href="../audit/audit_view.php">Audit Logs</a>
+            <a href="../subscription/reports.php">Reports</a>
             <a href="../../core/auth.php?logout=true" style="margin-top: auto;">Logout</a>
         </aside>
 

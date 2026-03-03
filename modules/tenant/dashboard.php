@@ -160,18 +160,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['company_name'])) {
     <div class="dashboard-layout">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="logo" style="margin-bottom: 2rem; font-size: 1.25rem;">
-                <span class="logo-icon">💠</span>
-                <span class="logo-text">SaaS Hub</span>
-            </div>
-            <!-- Sidebar Links -->
-            <a href="dashboard.php" class="active"> Home</a>
-            <a href="../user/list_user.php">Manage Users</a>
-            <a href="../subscription/status.php">Subscription Status</a>
-            <a href="../audit/audit_view.php">Audit Logs</a>
-            <a href="../../core/auth.php?logout=true" style="margin-top: auto;">Logout</a>
-        </aside>
-
+    <div class="logo" style="margin-bottom: 2rem; font-size: 1.25rem;">
+        <span class="logo-icon">💠</span>
+        <span class="logo-text">SaaS Hub</span>
+    </div>
+    <a href="dashboard.php" class="active"> Home</a>
+    <a href="../user/list_user.php">Manage Users</a>
+    <a href="../subscription/status.php">Subscription Status</a>
+    
+    <a href="../subscription/reports.php">Advanced Reports</a>
+    
+    <a href="../audit/audit_view.php">Audit Logs</a>
+    
+    <a href="../../core/auth.php?logout=true" style="margin-top: auto;">Logout</a>
+</aside>
         <!-- Main Content -->
         <main class="main-content">
             <div class="page-header">

@@ -124,7 +124,7 @@ else: ?>
 endif; ?>
                 
                 <div style="margin-top: 15px;">
-                    <a href="<?php echo BASE_URL; ?>modules/subscription/reports.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
+                    <a href="<?php echo BASE_URL; ?>modules/tenant/dashboard.php" style="color: #64748b; text-decoration: none; font-size: 14px; font-weight: 600;">
                         <i class="fas fa-chevron-left"></i> Back to Dashboard
                     </a>
                 </div>

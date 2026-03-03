@@ -6,6 +6,10 @@ include(__DIR__ . '/check_access.php');
 require_once(__DIR__ . '/../../config/db.php');
 require_once(__DIR__ . '/plan_logic.php');
 
+// --- LAIBA: Audit log include kiya ---
+require_once(__DIR__ . '/../audit/audit.php');
+$audit_obj = new AuditLog($db);
+
 $plan_logic = new PlanLogic($db);
 
 $tid = $_SESSION['tenant_id'] ?? 1;
@@ -222,6 +226,13 @@ include(__DIR__ . '/sidebar.php');
     });
 
     function downloadPDF() {
+
+       // --- LAIBA: Background mein Audit Log save karne ke liye ---
+    fetch('<?php echo BASE_URL; ?>modules/audit/log_ajax.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=Downloaded PDF Business Report&module=Reports'
+    });
         const element = document.querySelector('.report-content'); 
         const noExport = document.getElementById('no-export');
         noExport.style.display = 'none';

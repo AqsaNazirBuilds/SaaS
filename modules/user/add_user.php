@@ -1,6 +1,9 @@
 <?php
 session_start();
 require_once '../../config/db.php';
+// laiba add audit.php
+require_once '../audit/audit.php';
+$audit_obj = new AuditLog($conn);
 
 // Ensure user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['tenant_id'])) {
@@ -89,6 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_ur = $conn->prepare("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)");
                     $stmt_ur->bind_param("ii", $new_user_id, $role_id);
                     $stmt_ur->execute();
+                    // <--- YAHAN YE LINE ADD KAREIN --->
+                    $audit_obj->logAction($_SESSION['user_id'], "Added new user: $name ($role_name)", "Users"); 
 
                     $success = "User added successfully!";
                     $current_user_count++; // Update count immediately for UI

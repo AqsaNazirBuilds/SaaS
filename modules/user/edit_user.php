@@ -1,6 +1,10 @@
 <?php
 session_start();
 require_once '../../config/db.php';
+include_once(__DIR__ . '/../../core/permission_functions.php');
+
+// Check if user has permission to edit users
+require_permission('user.edit');
 
 // --- LAIBA: Audit log include kiya ---
 require_once '../audit/audit.php';

@@ -1,7 +1,12 @@
 <?php
 session_start();
 require_once '../../config/db.php';
-// laiba add audit.php
+include_once(__DIR__ . '/../../core/permission_functions.php');
+
+// Check if user has permission to create users
+require_permission('user.create');
+
+// --- LAIBA: Audit log include kiya ---
 require_once '../audit/audit.php';
 $audit_obj = new AuditLog($conn);
 

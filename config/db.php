@@ -22,7 +22,7 @@ if ($host_name === 'localhost') {
 
     // IMPORTANT: yahan folder name soos_project hai
 
-    define('BASE_URL', 'http://localhost/SAAS_PROJECT/');
+    define('BASE_URL', 'http://localhost/SAAS-HUB/');
     $db_host = "localhost";
 
     $db_user = "root";
@@ -31,7 +31,7 @@ if ($host_name === 'localhost') {
 
     $db_name = "saas";   // confirm your local database name
 
-    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name,3307);
 
 
 
@@ -57,7 +57,7 @@ if ($host_name === 'localhost') {
 
 
 
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name,);
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name,3307);
 
 
 
